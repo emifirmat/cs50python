@@ -1,0 +1,21 @@
+--------------------GENERAL--------------------
+The main game is played by rows until one of the players reaches the goal score.
+Each row has 3 phases and the player requires to win at least 2 of them in order to win the row.
+The highest value card played during the phase is the winner of it.
+Each player has one turn per phase.
+
+--------------------DEALING--------------------
+Each row the dealer changes. They are the last to play in first phase.
+Deck must be shuffled and then cut by the other player before dealing. 
+Dealer must deal three cards to each player including themselves.
+
+--------------------TURNS---------------------- 
+Turns finish after the card is played.
+The first to play is the one located at the right of the dealer.
+The winner of the current phase is the first to play in the next one. 
+If there was a tie, turns continues without modifications.
+
+--------------------TIES-----------------------
+If player X won the first phase and in the next ones there is a tie, player X is the winner.
+If at phase 1 there is a tie and player X wins the second one, player X is the winner.
+If there is a tie in all phases, the dealer loses. 

@@ -1,0 +1,5 @@
+“Truco” is a card game very popular in Argentina. 
+It is played with a Spanish deck and the goal is to reach a specific score that in this game can be 15 or 30. 
+This version only supports 1v1 game and excludes “flor” rules.
+If you want to know more about the full version card game, please visit: https://es.wikipedia.org/wiki/Truco_argentino
+See Cards, Main, Envido, Truco, or Scores for more info. 

@@ -1,0 +1,9 @@
+The goal of the game is to reach 15 or 30 points, which is decided before starting playing.
+In each row, you can earn game points from envido and from truco.
+Possible score points to earn in a row:
+- Minimum from envido: 0 (None called it)
+- Maximum from envido: Left-to-win (The player with less score points lost falta envido)
+- Minimum from truco: 1 (Not called or rejected)
+- Maximum from truco: 4 (Vale 4 was accepted)
+- Minimum in a row: 1
+- Maximum in a row: Left-to-win

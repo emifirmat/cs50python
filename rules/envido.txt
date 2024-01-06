@@ -1,0 +1,33 @@
+--------------------CALLING--------------------------
+Envido should be called at the very beggining of the turn and in the first phase. After that, players should wait until next row to call it again.
+The adversary can reject, accept or follow the next chain of calls: envido --> envido --> real envido --> falta envido.
+If the adversary followed the chain, then the original player has to answer.
+Note: The call can start from any point of the chain. Steps can be skipped as long as they follow the chain. 
+E.g.: Player 1 calls "real envido", player 2 calls "falta envido" (they can't call envido or real envido), player 1 only can accept or reject. 
+
+--------------------ENVIDO POINTS--------------------
+Each card number represents the envido points, excepted "the oldies" which give 0 envido points.
+If a player has 2 cards of the same type, they sum each other and add extra 20 points. 
+If a player has 3 cards of the same type, only 2 of them can be summed.
+e.g.: 3 coins, 5 coins, 1 sword --> 3 + 5 + 20 = 28 points 
+e.g.2: 3 sword, 10 sword, 11 sword --> 3 + 0 + 20 = 23 points
+e.g.3: 4 cup, 7 coin, 12 club -->  7 points
+Min possible points: 0 
+Max possible points: 33
+
+--------------------SCORE POINTS---------------------
+Score points are accumulative.
+Rejection: 1 score point
+Envido: 2 score points
+Real envido: 3 score points
+Falta envido: Loser left-to-win score points
+E.g: envido + real envido accepted: 5 score points
+E.g.2: envido + envido rejected: 3 score points
+
+--------------------JUGABILITY-----------------------
+The player who answered is the first to announce their points.
+In order to win, the caller should announce higher points. If they have lower points and only for the purpose of not revealing their points, instead they can say "Son buenas".
+If there is a tie, the first announcer is the winner.
+Players can lie about their points, but at the end of the row, if the winner lied, points go to the loser.
+Announced points cannot be rectified.
+ 

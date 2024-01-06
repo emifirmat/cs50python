@@ -1,0 +1,18 @@
+It is played with a Spanish deck excluding eights, nines and jokers. Total cards: 40
+Values from higher to lower:
+1 sword
+1 club
+7 swords
+7 coins
+3 all
+2 all
+1 coin and cup
+12 all
+11 all
+10 all
+7 cups and clubs
+6 all
+5 all
+4 all
+E.g: 7 coins is higher than any 2, but lower than 7 swords. 2 coins is equal to any other 2.  
+10, 11 and 12 are known as "the oldies"
