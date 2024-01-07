@@ -2,7 +2,11 @@ from sys import exit
 from tabulate import tabulate
 from time import sleep
 from pyfiglet import Figlet
-from classes import Menu
+from classes import Menu, Deck
+
+# Default game settings
+goal_scre = 30
+
 
 
 def main():
@@ -77,12 +81,29 @@ def rules():
 
 
 def play():
+    # Settings
+    pc_scre = 0
+    hm_scre = 0
+    
+    # Starting message
+    print(f"Starting game...\n\nThe first who reaches {goal_scre} points wins", end="\n\n") 
+    print("")
+        
+    # Shuffling
+    deck = Deck()
+    deck.shuffle()
+    deck.cut()
+    
+    # Dealing
     ...
-    # Jugability
-        # Dealer
+    print(deck)    
+        
         # First row
         # Second row
         # Third row
+
+
+
 
 def score():
     ...    
