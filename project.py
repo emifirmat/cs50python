@@ -2,7 +2,8 @@ from sys import exit
 from tabulate import tabulate
 from time import sleep
 from pyfiglet import Figlet
-from classes import Menu, Deck
+from classes import Menu, Deck, Player
+import random
 
 # Default game settings
 goal_scre = 30
@@ -89,18 +90,38 @@ def play():
     print(f"Starting game...\n\nThe first who reaches {goal_scre} points wins", end="\n\n") 
     print("")
         
+    # Create players
+    p1 = Player("Emi") 
+    p2 = Player("PC")
+     
+    """ Start Row """
+    print("Starting row...\n")
+
+    # Choose dealer
+    dealer = random.choice([p1, p2])
+    dealer.is_dealer = True
+
+    # Set first to play = p1
+    if p1.is_dealer == True:
+        p1, p2 = p2, p1
+
+    print(f"first to play is {p1} and second to play is {p2}")
+    
     # Shuffling
     deck = Deck()
     deck.shuffle()
     deck.cut()
+
+    # Dealing 
+    for _ in range(3): 
+        p1.hand.append(deck.deal()) 
+        p2.hand.append(deck.deal()) 
     
-    # Dealing
-    ...
-    print(deck)    
-        
-        # First row
-        # Second row
-        # Third row
+    print(f"{p1} = {p1.hand}, {p2} = {p2.hand}") 
+       
+    # First phase
+    # Second phase
+    # Third phase
 
 
 
