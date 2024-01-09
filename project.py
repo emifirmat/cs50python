@@ -99,28 +99,48 @@ def play():
 
     # Choose dealer
     dealer = random.choice([p1, p2])
-    dealer.is_dealer = True
+    dealer.is_dealer()
 
     # Set first to play = p1
-    if p1.is_dealer == True:
+    if p1.dealer == True:
         p1, p2 = p2, p1
 
     print(f"first to play is {p1} and second to play is {p2}")
     
+    # Set deck
+    deck = []
+    for type in ["sword", "coin", "cup", "club"]:
+        for number in range(12):
+             if 7 < number + 1 < 10:
+                    continue
+             else: 
+                deck.append(f"{number + 1} {type}")
+    deck = Deck(deck)
+
     # Shuffling
-    deck = Deck()
     deck.shuffle()
     deck.cut()
-
+    
+    """First phase"""
+    print("Starting phase 1...\n")
+    
     # Dealing 
     for _ in range(3): 
         p1.hand.append(deck.deal()) 
         p2.hand.append(deck.deal()) 
-    
+
     print(f"{p1} = {p1.hand}, {p2} = {p2.hand}") 
-       
-    # First phase
+
+    # Playing turns
+    p1card = turn(p1)   
+    p2card = turn(p2)
+
+    # Compare cards
+    
+    
     # Second phase
+
+
     # Third phase
 
 
@@ -161,6 +181,42 @@ def exit_game():
 
     if answer == "yes":
         exit("--Thank you for playing truco, see you!")
+
+
+def turn(px):
+    # Print turn
+    print(f"It's {px}'s turn...\n")
+    
+    # Open menu and input an option
+    options = Menu([
+        ["envido"],
+        ["truco"],      
+        ["play card"],
+    ])
+    print(f"{options}\n")
+    option = options.get_answer()
+
+    # Execute option
+    match option:
+        case "envido":
+            envido()
+        case "truco":
+            truco()
+        case "play card":
+            card = px.pick_card()   
+            print(px.show_card(card))
+            px.remove_card(card)
+            print(px.hand)
+            return card
+
+
+def envido():
+    ...
+
+
+def truco():
+    ...
+
 
 
 if __name__ == "__main__":

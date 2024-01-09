@@ -26,68 +26,77 @@ class Menu:
             
 
 class Deck:
-    def __init__(self):
-        self._deck = []
-        index = -1
-
-        for type in ["sword", "coin", "cup", "club"]:
-            for number in range(12):
-                if 7 < number + 1 < 10:
-                    continue
-                else: 
-                    index += 1 
-                    self._deck.append({"number": number + 1, "type": type})
+    def __init__(self, deck):
+        self.deck = deck
     
     @property
     def deck(self):
         return self._deck
     
+    @deck.setter
+    def deck(self, deck):     
+        if len(deck) > 40:
+            raise ValueError("Too many cards in deck!")
+        self._deck = deck
+    
     def shuffle(self):
-        shuffle(self._deck)
+        shuffle(self.deck)
 
     def cut(self):
-        size = int(len(self._deck) / 2)
-        self._deck = self._deck[size:] + self._deck[:size]
+        size = int(len(self.deck) / 2)
+        self._deck = self.deck[size:] + self.deck[:size]
 
+    def len(self):
+        return len(self.deck)
+    
     def deal(self):
-        for card in itertools.cycle(self._deck):
+        for card in itertools.cycle(self.deck):
             # Move card to deal to the end and pop it
-            self._deck = self._deck[1:] + self._deck[:1] 
+            self.deck = self.deck[1:] + self.deck[:1] 
             self.deck.pop()
             # Return card
             return card
     
     def __str__(self):
-        values = []
-        for row in self._deck:
-            values.append(f"{row['number']} {row['type']}")
-        return f"{values}"   
+        return f"{self.deck}"   
 
 
 class Player:
     def __init__(self, name):
         self.player = name
-        self.is_dealer = False
+        self.dealer = False
         self.hand = []
         
     def is_dealer(self):
-        return self.is_dealer
+        self.dealer = True
     
-    def hand(self, *cards):
-        if len(cards) > 3:
+    def hand(self):
+        if len(self.hand) > 3:
             raise ValueError("Too many cards in hand")
+        return f"{self.hand}"
+
+    def pick_card(self):
+        print("Pick a card: ")
+        while True:
+            card = input(f"{self.hand}\n")
+            if card in self.hand:
+                return card
+    
+    def show_card(self, card):
+        return f"{self.player} plays {card}\n"
+
+    def remove_card(self, card):
+        self.hand = list(filter(lambda x: x != card, self.hand))
+        return f"{self.hand}"
 
     def __str__(self):
-        return f"{self.player}"
+        return f"{self.player}"   
+
 
 """
 
 
 -- Hand
-        - number
-        - type
         - value
         - envido value
-    
-
 """
