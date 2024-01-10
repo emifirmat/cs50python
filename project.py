@@ -2,8 +2,8 @@ from sys import exit
 from tabulate import tabulate
 from time import sleep
 from pyfiglet import Figlet
-from classes import Menu, Deck, Player
-import random
+from classes import Menu, Deck, Player, Card, Settings
+import random, csv
 
 # Default game settings
 goal_scre = 30
@@ -83,12 +83,10 @@ def rules():
 
 def play():
     # Settings
-    pc_scre = 0
-    hm_scre = 0
+    settings = Settings()
     
     # Starting message
-    print(f"Starting game...\n\nThe first who reaches {goal_scre} points wins", end="\n\n") 
-    print("")
+    print(f"Starting game...\n\nThe first who reaches {goal_scre} points wins\n") 
         
     # Create players
     p1 = Player("Emi") 
@@ -97,6 +95,21 @@ def play():
     """ Start Row """
     print("Starting row...\n")
 
+    # Set deck
+    try:
+        with open("cards_values.csv") as file: 
+            csv_file = csv.DictReader(file)       
+            cards_list = [row for row in csv_file]
+    
+    except FileNotFoundError:
+        exit("Can't open cards values file")
+
+    deck = Deck(cards_list)
+    
+    """Start phase"""
+    settings.phase += 1
+    print(f"Starting phase {settings}...\n")
+    
     # Choose dealer
     dealer = random.choice([p1, p2])
     dealer.is_dealer()
@@ -104,38 +117,37 @@ def play():
     # Set first to play = p1
     if p1.dealer == True:
         p1, p2 = p2, p1
-
-    print(f"first to play is {p1} and second to play is {p2}")
+        
+    print(f"First to play is {p1} and second to play is {p2}\n")
     
-    # Set deck
-    deck = []
-    for type in ["sword", "coin", "cup", "club"]:
-        for number in range(12):
-             if 7 < number + 1 < 10:
-                    continue
-             else: 
-                deck.append(f"{number + 1} {type}")
-    deck = Deck(deck)
-
     # Shuffling
     deck.shuffle()
     deck.cut()
-    
-    """First phase"""
-    print("Starting phase 1...\n")
     
     # Dealing 
     for _ in range(3): 
         p1.hand.append(deck.deal()) 
         p2.hand.append(deck.deal()) 
 
-    print(f"{p1} = {p1.hand}, {p2} = {p2.hand}") 
+    print(f"{p1} = {p1:hand}, {p2} = {p2:hand}\n") 
 
-    # Playing turns
-    p1card = turn(p1)   
-    p2card = turn(p2)
+    # Playing turns - First variable is current player's turn
+    p1card = turn(p1, p2, settings)   
+    p2card = turn(p2, p1, settings)
 
     # Compare cards
+    msg = f"The winner of phase {settings} is"
+    if p1card > p2card:
+        p1.add_phase_point()
+        settings.phase_winner.append(p1.player)
+    elif p1card < p2card:
+        p2.add_phase_point()
+        settings.phase_winner.append(p2.player)
+    # Tie
+    else:
+        settings.phase_winner.append("Tie")
+        msg = f"There is a"
+    print(f"{msg} {settings:phasew}")
     
     
     # Second phase
@@ -183,15 +195,15 @@ def exit_game():
         exit("--Thank you for playing truco, see you!")
 
 
-def turn(px):
+def turn(px, py, settings):
     # Print turn
     print(f"It's {px}'s turn...\n")
     
     # Open menu and input an option
     options = Menu([
-        ["envido"],
-        ["truco"],      
-        ["play card"],
+        ["envido", "Call envido"],
+        ["truco", "Call truco"],     
+        ["play", "Play a card"],
     ])
     print(f"{options}\n")
     option = options.get_answer()
@@ -201,22 +213,49 @@ def turn(px):
         case "envido":
             envido()
         case "truco":
-            truco()
-        case "play card":
-            card = px.pick_card()   
-            print(px.show_card(card))
-            px.remove_card(card)
-            print(px.hand)
-            return card
+            truco(py, settings)
+            # Play card after truco
+            return play_card(px)
+        case "play":
+            return play_card(px)
 
 
 def envido():
     ...
 
 
-def truco():
-    ...
+def truco(py, settings):
+    n = settings.truco_phase 
+    chain = settings.truco_chain
+    
+    for key in chain[n]:
+        print(f"-{key.upper()}!-\n") 
 
+    print(f"{py} answers:")  
+    options = Menu([
+        ["accept"],
+        ["reject"],
+        ["reply"],
+    ])
+
+    print(f"{options}")
+
+    answer = options.get_answer()
+
+    match answer:
+        case "accept":
+            for value in chain[n].values():
+                settings.truco_points = value
+            settings.truco_phase += 1
+        case "reject":
+            ...
+        case "reply":
+            ...
+        
+def play_card(px):
+    card = Card(px.pick_card(f"{px:hand}"))
+    print(f"{px:hand} left\n")
+    return card.truco_val
 
 
 if __name__ == "__main__":
