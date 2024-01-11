@@ -5,6 +5,9 @@ from pyfiglet import Figlet
 from classes import Menu, Deck, Player, Card, Settings
 import random, csv
 
+# Constant variables
+TOTAL_PHASES = 3
+
 # Default game settings
 goal_scre = 30
 
@@ -92,9 +95,6 @@ def play():
     p1 = Player("Emi") 
     p2 = Player("PC")
      
-    """ Start Row """
-    print("Starting row...\n")
-
     # Set deck
     try:
         with open("cards_values.csv") as file: 
@@ -104,22 +104,11 @@ def play():
     except FileNotFoundError:
         exit("Can't open cards values file")
 
+    """ Start Row """
+    settings.row += 1
+    print("Starting row...\n")
     deck = Deck(cards_list)
-    
-    """Start phase"""
-    settings.phase += 1
-    print(f"Starting phase {settings}...\n")
-    
-    # Choose dealer
-    dealer = random.choice([p1, p2])
-    dealer.is_dealer()
 
-    # Set first to play = p1
-    if p1.dealer == True:
-        p1, p2 = p2, p1
-        
-    print(f"First to play is {p1} and second to play is {p2}\n")
-    
     # Shuffling
     deck.shuffle()
     deck.cut()
@@ -129,33 +118,91 @@ def play():
         p1.hand.append(deck.deal()) 
         p2.hand.append(deck.deal()) 
 
-    print(f"{p1} = {p1:hand}, {p2} = {p2:hand}\n") 
+    # Choose dealer in first row
+    if settings.row == 1: 
+        dealer = random.choice([p1, p2])
+        dealer.is_dealer()
 
-    # Playing turns - First variable is current player's turn
-    p1card = turn(p1, p2, settings)   
-    p2card = turn(p2, p1, settings)
+    """Start phase"""
+    for _ in range(TOTAL_PHASES):                
+        settings.phase += 1
+        print(f"Starting phase {settings}...\n")
 
-    # Compare cards
-    msg = f"The winner of phase {settings} is"
-    if p1card > p2card:
-        p1.add_phase_point()
-        settings.phase_winner.append(p1.player)
-    elif p1card < p2card:
-        p2.add_phase_point()
-        settings.phase_winner.append(p2.player)
-    # Tie
-    else:
-        settings.phase_winner.append("Tie")
-        msg = f"There is a"
-    print(f"{msg} {settings:phasew}")
+        if settings.phase == 1:
+            # Set first to play = p1
+            if p1.dealer == True:
+                p1, p2 = p2, p1
+            p1.plays_first()
+        else:
+            # Set first to play in phase 2 - 3
+            if p2.first == True:
+                p2, p1 = p1, p2
+
+        print(f"First to play is {p1} and second to play is {p2}\n")
+        
+        print(f"{p1} = {p1:hand}, {p2} = {p2:hand}\n") 
+
+        # Playing turns - First variable in turn() is current player's turn
+        p1card = turn(p1, p2, settings)   
+        # Rejected truco
+        if p1card == False:
+            break
     
+        p2card = turn(p2, p1, settings)
+        # Rejected truco
+        if p2card == False:
+            break
+
+        # Compare cards
+        msg = f"The winner of phase {settings} is"
+        
+        # P1 wins
+        if p1card > p2card:
+            p1.add_phase_point()
+            settings.phase_winner.append(p1.player)
+
+        # P2 wins
+        elif p1card < p2card:
+            p2.add_phase_point()
+            settings.phase_winner.append(p2.player)
+            # Winner is first to play in next phase
+            p2.plays_first()
+            p1.plays_last()
+        # Tie
+        else:
+            settings.phase_winner.append("Tie")
+            msg = f"There is a"
+        print(f"{msg} {settings:phasew}\n")
+        print(f"Current phase points: {p1} {p1.phase_point} {p2} {p2.phase_point}")
+        print(f"Current truco points: {settings.truco_points}")
     
-    # Second phase
+        # End row
+        if settings.phase != 1:
+            # Someone wins 2 phases
+            if p1.phase_point == 2:
+                score()
+                break
+            if p2.phase_point == 2:
+                score()
+                break
+        # There is a tie in a phase and someone won the other one 
+        if settings.phase == 2:
+            if p1.phase_point == 1:
+                score()
+                break
+            if p2.phase_point == 1:
+                score()
+                break
+          
+        if settings.phase == 3:
+            # Uncompleted: Won ph 1, won ph 2, tie ph3
+            if p1.name == settings.phase_winner[0]:
+                score()
+            else:
+                score()
 
-
-    # Third phase
-
-
+            # 3 Ties, first to play (P1) wins 
+            score()
 
 
 def score():
@@ -213,9 +260,11 @@ def turn(px, py, settings):
         case "envido":
             envido()
         case "truco":
-            truco(py, settings)
-            # Play card after truco
-            return play_card(px)
+            if truco(px, py, settings):
+                # Play card after truco
+                return play_card(px)
+            else:
+                return False # End row
         case "play":
             return play_card(px)
 
@@ -224,22 +273,27 @@ def envido():
     ...
 
 
-def truco(py, settings):
+def truco(px, py, settings):
     n = settings.truco_phase 
     chain = settings.truco_chain
     
     for key in chain[n]:
-        print(f"-{key.upper()}!-\n") 
+        print(f"{px} says -{key.upper()}!-\n") 
 
-    print(f"{py} answers:")  
-    options = Menu([
+    opt_list = [
         ["accept"],
         ["reject"],
         ["reply"],
-    ])
+    ]
 
+    # Eliminate reply option when "vale 4 is called"
+    if n > 1:
+        opt_list.pop()    
+    
+    # Prompt truco options
+    print(f"{py} answers:")  
+    options = Menu(opt_list)
     print(f"{options}")
-
     answer = options.get_answer()
 
     match answer:
@@ -247,11 +301,14 @@ def truco(py, settings):
             for value in chain[n].values():
                 settings.truco_points = value
             settings.truco_phase += 1
+            return True
         case "reject":
-            ...
+            return False
         case "reply":
-            ...
-        
+            settings.truco_phase += 1
+            truco(py, px, settings)
+
+
 def play_card(px):
     card = Card(px.pick_card(f"{px:hand}"))
     print(f"{px:hand} left\n")

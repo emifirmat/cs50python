@@ -81,12 +81,19 @@ class Player(Points):
     def __init__(self, name):
         self.player = name
         self.dealer = False
+        self.first = False
         self.hand = []
         super().__init__()
         
     def is_dealer(self):
         self.dealer = True        
 
+    def plays_first(self):
+        self.first = True
+    
+    def plays_last(self):
+        self.last = False
+    
     def pick_card(self, hand):
         print(f"{self.player} picks a card: ")
         while True:
@@ -150,6 +157,7 @@ class Settings:
     def __init__(self):
         self.pc_scre = 0
         self.hm_scre = 0
+        self.row = 0
         self.phase = 0
         self.phase_winner = []
         self.truco_points = 1
@@ -160,8 +168,6 @@ class Settings:
         ]
         self.truco_phase = 0
 
-    
-    
     def __str__(self):
         return f"{self.phase}"
     
@@ -179,10 +185,3 @@ class Settings:
         else:
             return self.__str__()
         
-"""
-
-
--- Hand
-        - value
-        - envido value
-"""
