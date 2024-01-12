@@ -13,6 +13,13 @@ class Menu:
     def __str__(self):
        return tabulate(self.menu, headers=["Command", "Description"])
         
+    def __format__(self, fmt_spec):
+        if fmt_spec == "horizontal":
+            return " | ".join(self.menu)
+        else:
+            return self.__str__()
+    
+    
     def get_answer(self):
         while True:
             choise = input("Command: ").strip().lower() 
@@ -65,13 +72,22 @@ class Deck:
 class Points:
     def __init__(self):
         self._phase_point = 0
+        self._game_score = 0
 
     @property
     def phase_point(self):
         return self._phase_point
     
+    @property
+    def game_score(self):
+        return self._game_score
+    
     def add_phase_point(self):
         self._phase_point += 1
+
+    def update_game_score(self, points):
+        # Points = envido or truco points
+        self._game_score += points 
 
     def __str__(self):
         return f"{self.phase_point}"
@@ -79,7 +95,7 @@ class Points:
 
 class Player(Points):
     def __init__(self, name):
-        self.player = name
+        self.name = name
         self.dealer = False
         self.first = False
         self.hand = []
@@ -95,7 +111,7 @@ class Player(Points):
         self.last = False
     
     def pick_card(self, hand):
-        print(f"{self.player} picks a card: ")
+        print(f"{self.name} picks a card: ")
         while True:
             # Show cards
             try:
@@ -113,11 +129,13 @@ class Player(Points):
                         return card
     
     def show_card(self, card):
-        return f"{self.player} plays {card}\n"
- 
+        return f"{self.name} plays {card}\n"
     
+    def clean_hand(self):
+        self.hand = []
+ 
     def __str__(self):
-        return f"{self.player}"   
+        return f"{self.name}"   
 
     def __format__(self, format_spec):
         if format_spec == "hand":
@@ -155,8 +173,6 @@ class Card:
 
 class Settings:
     def __init__(self):
-        self.pc_scre = 0
-        self.hm_scre = 0
         self.row = 0
         self.phase = 0
         self.phase_winner = []
@@ -167,6 +183,16 @@ class Settings:
             {"vale cuatro": 4},
         ]
         self.truco_phase = 0
+        self.envido_points = 0
+        self.envido_chain = [
+            {"envido": 2},
+            {"real envido": 3},
+            {"falta envido": 0},
+        ]
+        self.envido_phase = 0
+
+    def set_falta_envido(game_score, points):
+        self.envido_chain["falta envido"] = game_score - points
 
     def __str__(self):
         return f"{self.phase}"

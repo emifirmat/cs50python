@@ -6,11 +6,10 @@ from classes import Menu, Deck, Player, Card, Settings
 import random, csv
 
 # Constant variables
-TOTAL_PHASES = 3
+TOTAL_PHASES = TOTAL_CARDS = 3
 
 # Default game settings
 goal_scre = 30
-
 
 
 def main():
@@ -105,111 +104,83 @@ def play():
         exit("Can't open cards values file")
 
     """ Start Row """
-    settings.row += 1
-    print("Starting row...\n")
-    deck = Deck(cards_list)
+    while True:
+        settings.phase = 0
+        settings.row += 1
+        print("Starting row...\n")
+        deck = Deck(cards_list)
 
-    # Shuffling
-    deck.shuffle()
-    deck.cut()
-    
-    # Dealing 
-    for _ in range(3): 
-        p1.hand.append(deck.deal()) 
-        p2.hand.append(deck.deal()) 
-
-    # Choose dealer in first row
-    if settings.row == 1: 
-        dealer = random.choice([p1, p2])
-        dealer.is_dealer()
-
-    """Start phase"""
-    for _ in range(TOTAL_PHASES):                
-        settings.phase += 1
-        print(f"Starting phase {settings}...\n")
-
-        if settings.phase == 1:
-            # Set first to play = p1
-            if p1.dealer == True:
-                p1, p2 = p2, p1
-            p1.plays_first()
-        else:
-            # Set first to play in phase 2 - 3
-            if p2.first == True:
-                p2, p1 = p1, p2
-
-        print(f"First to play is {p1} and second to play is {p2}\n")
+        # Shuffling
+        deck.shuffle()
+        deck.cut()
         
-        print(f"{p1} = {p1:hand}, {p2} = {p2:hand}\n") 
+        # Dealing 
+        for _ in range(TOTAL_CARDS): 
+            p1.hand.append(deck.deal()) 
+            p2.hand.append(deck.deal()) 
 
-        # Playing turns - First variable in turn() is current player's turn
-        p1card = turn(p1, p2, settings)   
-        # Rejected truco
-        if p1card == False:
-            break
-    
-        p2card = turn(p2, p1, settings)
-        # Rejected truco
-        if p2card == False:
-            break
+        # Choose dealer in first row
+        if settings.row == 1: 
+            dealer = random.choice([p1, p2])
+            dealer.is_dealer()
 
-        # Compare cards
-        msg = f"The winner of phase {settings} is"
-        
-        # P1 wins
-        if p1card > p2card:
-            p1.add_phase_point()
-            settings.phase_winner.append(p1.player)
+        """Start phase"""
+        for _ in range(TOTAL_PHASES):                
+            settings.phase += 1
+            print(f"Starting phase {settings}...\n")
 
-        # P2 wins
-        elif p1card < p2card:
-            p2.add_phase_point()
-            settings.phase_winner.append(p2.player)
-            # Winner is first to play in next phase
-            p2.plays_first()
-            p1.plays_last()
-        # Tie
-        else:
-            settings.phase_winner.append("Tie")
-            msg = f"There is a"
-        print(f"{msg} {settings:phasew}\n")
-        print(f"Current phase points: {p1} {p1.phase_point} {p2} {p2.phase_point}")
-        print(f"Current truco points: {settings.truco_points}")
-    
-        # End row
-        if settings.phase != 1:
-            # Someone wins 2 phases
-            if p1.phase_point == 2:
-                score()
-                break
-            if p2.phase_point == 2:
-                score()
-                break
-        # There is a tie in a phase and someone won the other one 
-        if settings.phase == 2:
-            if p1.phase_point == 1:
-                score()
-                break
-            if p2.phase_point == 1:
-                score()
-                break
-          
-        if settings.phase == 3:
-            # Uncompleted: Won ph 1, won ph 2, tie ph3
-            if p1.name == settings.phase_winner[0]:
-                score()
+            if settings.phase == 1:
+                # Set first to play = p1
+                if p1.dealer == True:
+                    p1, p2 = p2, p1
+                p1.plays_first()
             else:
-                score()
+                # Set first to play in phase 2 - 3
+                if p2.first == True:
+                    p2, p1 = p1, p2
 
-            # 3 Ties, first to play (P1) wins 
-            score()
+            print(f"First to play is {p1} and second to play is {p2}\n")
+            
+            print(f"{p1} = {p1:hand}, {p2} = {p2:hand}\n") 
 
+            # Playing turns - First variable in turn() is current player's turn
+            p1card = turn(p1, p2, settings)   
+            # Rejected truco
+            if p1card == False:
+                break
+            p2card = turn(p2, p1, settings)
+            # Rejected truco
+            if p2card == False:
+                break
 
-def score():
-    ...    
-    # Score
-        # Sum total score
-        # Check total score
+            """ End phase """
+            # Compare cards
+            msg = f"The winner of phase {settings} is"
+            
+            # P1 wins
+            if p1card > p2card:
+                p1.add_phase_point()
+                settings.phase_winner.append(p1.name)
+
+            # P2 wins
+            elif p1card < p2card:
+                p2.add_phase_point()
+                settings.phase_winner.append(p2.name)
+                # Winner is first to play in next phase
+                p2.plays_first()
+                p1.plays_last()
+            # Tie
+            else:
+                settings.phase_winner.append("tie")
+                msg = f"There is a"
+            print(f"{msg} {settings:phasew}\n")
+            print(f"Current phase points: {p1} {p1.phase_point} {p2} {p2.phase_point}")
+            print(f"Current truco points: {settings.truco_points}")
+        
+            """ End row """
+            if settings.phase > 1:
+                if end_row(p1, p2, settings):
+                    break
 
 def introduction():
     # Welcome
@@ -228,18 +199,19 @@ def introduction():
     sleep(2)    
 
 
-def exit_game():
-    print()
-    print("Exit game? (Yes/No)")
-    menu = Menu([
-        ["yes"],
-        ["no"],
-    ])
+def exit_game(msg=None):
+    if msg == None:
+        print()
+        print("Exit game? (Yes/No)")
+        menu = Menu([
+            ["yes"],
+            ["no"],
+        ])
+        answer = menu.get_answer()
 
-    answer = menu.get_answer()
-
-    if answer == "yes":
+    if msg == "winner" or answer == "yes":
         exit("--Thank you for playing truco, see you!")
+    return
 
 
 def turn(px, py, settings):
@@ -258,7 +230,10 @@ def turn(px, py, settings):
     # Execute option
     match option:
         case "envido":
-            envido()
+            choise = Menu(["envido", "real envido", "falta envido"])
+            print(f"{choise:horizontal}")
+            choise = choise.get_answer()
+            envido(px, py, settings, choise)
         case "truco":
             if truco(px, py, settings):
                 # Play card after truco
@@ -269,9 +244,46 @@ def turn(px, py, settings):
             return play_card(px)
 
 
-def envido():
-    ...
+def envido(px, py, settings, call):
+    phase = settings.envido_phase 
+    chain = settings.envido_chain
 
+    print(F"{px} says -{call.upper()}!-\n")
+
+    opt_list = [
+        ["accept"],
+        ["reject"],
+        ["reply"],
+    ]
+
+    # Eliminate reply option when "falta envido is called"
+    if phase > 1:
+        opt_list.pop()    
+
+    # Prompt envido options
+    print(f"{py} answers:")  
+    options = Menu(opt_list)
+    print(f"{options}")
+    answer = options.get_answer()
+
+    match answer:
+        case "accept":
+            for value in chain[phase].values():
+                settings.envido_points =+ value
+            play_envido()
+        case "reject":
+            settings.envido_points += 1
+            score(px, settings, "envido")
+
+        case "reply":
+            replies = [value for value in chain[phase:]]
+            reply = Menu(replies)
+            phase += 1
+            envido(py, px, settings, reply)
+
+def play_envido():
+    exit("-----------------TO DO--------------------")
+    
 
 def truco(px, py, settings):
     n = settings.truco_phase 
@@ -309,10 +321,69 @@ def truco(px, py, settings):
             truco(py, px, settings)
 
 
+def end_row(p1, p2, settings):
+    # No ties in game
+    if tie := "tie" not in settings.phase_winner:
+        if p1.phase_point == 2:
+            score(p1, settings, "end")
+            print(f"{p1} wins, points: {p1.game_score}")
+        elif p2.phase_point == 2:
+            score(p2, settings, "end")
+            print(f"{p2} wins, points: {p2.game_score}")
+        # px won phase 1 and py won fase 2, move to phase 3
+        else:
+            return False
+    # Ties in game
+    else:
+        # Ties in row and p1 wins another phase
+        if match := p1.name in settings.phase_winner: 
+            score(p1, settings)
+            print(f"{p1} wins, points: {p1.game_score}")
+        # Ties in row and p2 wins another phase
+        elif match := p2.name in settings.phase_winner: 
+            score(p2, settings)
+            print(f"{p2} wins, points: {p2.game_score}")
+        else:
+            # 2 Ties in phase 2, move to phase 3
+            if settings.phase == 2: 
+                return False
+            else:
+                # Triple tie, p1 wins
+                score(p1, settings) 
+                print(f"{p1} wins, points: {p1.game_score}")   
+    # Clean hands
+    p1.clean_hand()
+    p2.clean_hand()
+    return True
+
+
 def play_card(px):
     card = Card(px.pick_card(f"{px:hand}"))
     print(f"{px:hand} left\n")
     return card.truco_val
+
+
+def score(px, settings, phase=None):
+    # Sum envido points to personal score
+    if phase == "envido":
+        px.update_game_score(settings.envido_points)
+    # Sum truco points to personal score
+    else:
+        px.update_game_score(settings.truco_points)  
+    
+    # Print score points
+    print(f"GAME SCORE POINTS --> {px.game_score}")
+
+    # Compare with total score
+    if px.game_score >= goal_scre:
+        if px.name == "PC":
+            print(f"😭😭 I'm sorry, you lost against {px.name} 😭😭")
+        else:
+            print(f"😁😁 Congratulations {px.name}!! You won the game 😁😁!!")
+        exit_game("winner")
+    else:    
+        return
+
 
 
 if __name__ == "__main__":
