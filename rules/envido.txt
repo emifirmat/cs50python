@@ -16,13 +16,13 @@ Min possible points: 0
 Max possible points: 33
 
 --------------------SCORE POINTS---------------------
-Score points are accumulative.
+All score points but the rejection are accumulative.
 Rejection: 1 score point
 Envido: 2 score points
 Real envido: 3 score points
 Falta envido: Loser left-to-win score points
 E.g: envido + real envido accepted: 5 score points
-E.g.2: envido + envido rejected: 3 score points
+E.g.2: envido + envido rejected: 2 score points
 
 --------------------JUGABILITY-----------------------
 The player who answered is the first to announce their points.
