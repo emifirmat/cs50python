@@ -2,8 +2,8 @@ from sys import exit
 from tabulate import tabulate
 from time import sleep
 from pyfiglet import Figlet
-from classes import Menu, Deck, Player, Settings
-import random, csv
+from classes import *
+import random, csv, re
 
 
 # Constant variables
@@ -19,15 +19,11 @@ def main():
     
     # Menu options: Start game, Rules, exit
     while True:
-        menu = Menu([
+        choise = set_menu([
             ["start", "Start game"],
             ["rules", "Learn how to play"],
             ["quit", "Exit game"],
         ])
-        print(f"{menu}\n")
-        
-        # User answer
-        choise = menu.get_answer()
 
         # Move to options
         match choise:
@@ -36,17 +32,111 @@ def main():
             case "quit":
                 exit_game()
             case "start":
-                play()
+                # Create settings, players and deck
+                settings = Settings()
+                p1, p2 = Player("Emi"), Player("PC")
+                full_deck = set_deck("cards_values.csv")
+                
+                # Starting message
+                print(f"Starting game...\n\nThe first who reaches {goal_scre} points wins\n")               
+
+                """ Start Row """
+                while True:
+                    # Clean hands and values from previous rows
+                    for cls in [p1, p2, settings]:
+                        cls.restart_values()
+                    
+                    # Start row
+                    settings.row += 1
+                    print(f"Starting row {settings.row}\n")
+                    deck = Deck(full_deck)
+
+                    # Shuffling
+                    deck.shuffle()
+                    deck.cut()
+                    
+                    # Dealing 
+                    for _ in range(TOTAL_CARDS): 
+                        p1.add_card(deck.deal()) 
+                        p2.add_card(deck.deal()) 
+                    
+                    # Choose dealer in first row
+                    if settings.row == 1: 
+                        dealer = random.choice([p1, p2])
+                        dealer.is_dealer()
+
+                    """Start phase"""
+                    for _ in range(TOTAL_PHASES):                
+                        settings.phase += 1
+                        print(f"Starting phase {settings}...\n")
+
+                        if settings.phase == 1:
+                            # Set first to play = p1
+                            if p1.dealer == True:
+                                p1, p2 = p2, p1
+                            p1.plays_first()
+
+                            # Unlock truco
+                            p1.truco_call = True
+                            p2.truco_call = True
+                        else:
+                            # Set first to play in phase 2 - 3
+                            if p2.first == True:
+                                p2, p1 = p1, p2
+                            # Lock envido
+                            settings.envido = False
+                        print(f"First to play is {p1} and second to play is {p2}\n")
+                        
+                        print(f"{p1} = {p1:hand}, {p2} = {p2:hand}\n") 
+
+                        # Playing turns - First variable in turn() is current player's turn
+                        p1card = turn(p1, p2, settings)   
+                        # Rejected truco
+                        if p1card == False:
+                            break
+                        p2card = turn(p2, p1, settings)
+                        # Rejected truco
+                        if p2card == False:
+                            end_row(p2, p1, settings)
+                            break
+
+                        """ End phase """
+                        # Compare cards
+                        msg = f"The winner of phase {settings} is"
+                        
+                        # P1 wins
+                        if p1card > p2card:
+                            p1.add_phase_point()
+                            settings.phase_winner.append(p1.name)
+
+                        # P2 wins
+                        elif p1card < p2card:
+                            p2.add_phase_point()
+                            settings.phase_winner.append(p2.name)
+                            # Winner is first to play in next phase
+                            p2.plays_first()
+                            p1.plays_last()
+                        # Tie
+                        else:
+                            settings.phase_winner.append("tie")
+                            msg = f"There is a"
+                        print(f"{msg} {settings:phasew}\n")
+                        print(f"Current phase points: {p1} {p1.phase_point} {p2} {p2.phase_point}")
+                        print(f"Current truco points: {settings.truco_score}")
+                    
+                        """ End row """
+                        if settings.phase > 1:
+                            if end_row(p1, p2, settings):
+                                break
     
 # Rules
 def rules():   
     while True:
-    
         # Intro rules
-        print("--To learn how to play, choose a command from the menu", end="\n\n")
+        print("--To learn how to play, choose a command from the menu\n")
             
         # Rules menu
-        menu = Menu([
+        choise = set_menu([
             ["intro"],
             ["cards"],
             ["main"],
@@ -54,144 +144,23 @@ def rules():
             ["truco"],
             ["scores"],
         ])
-
-        # Print menu and choose
-        print(menu, end="\n\n")
-        rchoise = menu.get_answer()
-        sleep(1)
-        
-        if rchoise == "quit" or rchoise =="exit":
-            print()
-            sleep(1)
-            return 
-        
+        if choise == "quit":
+            break
         # Show text from file
         try:
-            with open(f"rules/{rchoise}.txt") as file:
-                print(file.read(), end="\n\n")
+            with open(f"rules/{choise}.txt") as file:
+                print(f"{file.read()}\n")
         except FileNotFoundError:
-            print("Sorry, command is not working, try another option")
+            print("Sorry, missing information, try another option")
         
         # Ask to continue or leave rules
         sleep(1)
-        fchoise = input("Type <any letter> to continue navigating or <quit> to go back.\n\n")
-        sleep(1)
-
-        if fchoise == "quit":
-            print()
-            sleep(1)
-            return 
-
-
-def play():
-    # Settings
-    settings = Settings()
-    
-    # Starting message
-    print(f"Starting game...\n\nThe first who reaches {goal_scre} points wins\n") 
-        
-    # Create players
-    p1 = Player("Emi") 
-    p2 = Player("PC")
-     
-    # Set deck
-    try:
-        with open("cards_values.csv") as file: 
-            csv_file = csv.DictReader(file)       
-            cards_list = [row for row in csv_file]
-    
-    except FileNotFoundError:
-        exit("Can't open cards values file")
-
-    """ Start Row """
-    while True:
-        # Clean hands and values from previous rows
-        p1.restart_values()
-        p2.restart_values()
-        settings.restart_values()
-        
-        # Start row
-        settings.row += 1
-        print("Starting row...\n")
-        deck = Deck(cards_list)
-
-        # Shuffling
-        deck.shuffle()
-        deck.cut()
-        
-        # Dealing 
-        for _ in range(TOTAL_CARDS): 
-            p1.add_card(deck.deal()) 
-            p2.add_card(deck.deal()) 
-        
-        # Choose dealer in first row
-        if settings.row == 1: 
-            dealer = random.choice([p1, p2])
-            dealer.is_dealer()
-
-        """Start phase"""
-        for _ in range(TOTAL_PHASES):                
-            settings.phase += 1
-            print(f"Starting phase {settings}...\n")
-
-            if settings.phase == 1:
-                # Set first to play = p1
-                if p1.dealer == True:
-                    p1, p2 = p2, p1
-                p1.plays_first()
-
-                # Unlock truco
-                p1.truco_call = True
-                p2.truco_call = True
-            else:
-                # Set first to play in phase 2 - 3
-                if p2.first == True:
-                    p2, p1 = p1, p2
-                # Lock envido
-                settings.envido = False
-            print(f"First to play is {p1} and second to play is {p2}\n")
-            
-            print(f"{p1} = {p1:hand}, {p2} = {p2:hand}\n") 
-
-            # Playing turns - First variable in turn() is current player's turn
-            p1card = turn(p1, p2, settings)   
-            # Rejected truco
-            if p1card == False:
-                break
-            p2card = turn(p2, p1, settings)
-            # Rejected truco
-            if p2card == False:
-                end_row(p2, p1, settings)
-                break
-
-            """ End phase """
-            # Compare cards
-            msg = f"The winner of phase {settings} is"
-            
-            # P1 wins
-            if p1card > p2card:
-                p1.add_phase_point()
-                settings.phase_winner.append(p1.name)
-
-            # P2 wins
-            elif p1card < p2card:
-                p2.add_phase_point()
-                settings.phase_winner.append(p2.name)
-                # Winner is first to play in next phase
-                p2.plays_first()
-                p1.plays_last()
-            # Tie
-            else:
-                settings.phase_winner.append("tie")
-                msg = f"There is a"
-            print(f"{msg} {settings:phasew}\n")
-            print(f"Current phase points: {p1} {p1.phase_point} {p2} {p2.phase_point}")
-            print(f"Current truco points: {settings.truco_score}")
-        
-            """ End row """
-            if settings.phase > 1:
-                if end_row(p1, p2, settings):
-                    break
+        nchoise = input("Enter <any letter> to continue navigating or <quit> to go back to main menu.\n\n>> ")
+        if nchoise == "quit":
+           break
+    # Go back to main menu
+    print()
+    return 
 
 
 def introduction():
@@ -213,15 +182,13 @@ def introduction():
 
 def exit_game(msg=None):
     if msg == None:
-        print()
-        print("Exit game? (Yes/No)")
-        menu = Menu([
-            ["yes"],
-            ["no"],
-        ])
-        answer = menu.get_answer()
-
-    if msg == "winner" or answer == "yes":
+        print("\nExit game? (Yes/No)")
+        # Reprompt until receive a proper answer
+        while True:
+            answer = input(">> ").lower().strip()
+            if match := re.search(r"(^y(es)?$)|(^no?$)", answer):
+                break
+    if match := re.search(r"(^y(es)?$)", answer) or msg == "winner":
         exit("--Thank you for playing truco, see you!")
     return
 
@@ -242,6 +209,7 @@ def turn(px, py, settings):
             ["truco", "Call " + trucostr],     
             ["play", "Play a card"],
         ]
+        
         # Contemplate ingame cases
         if px.truco_call == False:
             menu = menu[2:] 
@@ -249,19 +217,13 @@ def turn(px, py, settings):
             menu = menu[1:]
         else:
             pass
-        
-        # Open menu
-        options = Menu(menu)
-        print(f"{options}\n")
-        option = options.get_answer()
+        option = set_menu(menu)
 
         # Execute option
         match option:
             case "envido":
                 settings.envido = False
-                choise = Menu(["envido", "real envido", "falta envido"])
-                print(f"{choise:horizontal}")
-                choise = choise.get_answer()
+                choise = set_menu(["envido", "real envido", "falta envido"], "envido")
                 envido(px, py, settings, choise)
             case "truco":
                 if truco(px, py, settings):
@@ -298,9 +260,7 @@ def envido(px, py, settings, call):
 
     # Prompt envido options
     print(f"{py} answers:")  
-    options = Menu(opt_list)
-    print(f"{options}")
-    answer = options.get_answer()
+    answer = set_menu(opt_list)
 
     # Py answers
     match answer:
@@ -339,9 +299,7 @@ def envido(px, py, settings, call):
             for row in chain[phase:]:
                 for key in row.keys():
                     replies.append(key)    
-            reply = Menu(replies)
-            print(f"{reply:horizontal}")
-            reply = reply.get_answer()
+            reply = set_menu(replies, "envido")
             envido(py, px, settings, reply)
 
 
@@ -425,9 +383,7 @@ def truco(px, py, settings):
     
     # Prompt truco options
     print(f"{py} answers:")  
-    options = Menu(opt_list)
-    print(f"{options}")
-    answer = options.get_answer()
+    answer = set_menu(opt_list)
 
     # py answers
     match answer:
@@ -451,6 +407,13 @@ def truco(px, py, settings):
             settings.truco_phase += 1
             truco(py, px, settings)
             return True
+
+
+def play_card(px):
+    print(f"{px.name} picks a card: ")
+    card = px.pick_card(f"{px:hand}")
+    print(f"{px.name} plays {card['number']} {card['type']}\n\n{px:hand} left\n")
+    return int(card['truco'])
 
 
 def end_row(p1, p2, settings):
@@ -491,13 +454,6 @@ def end_row(p1, p2, settings):
     return True
 
 
-def play_card(px):
-    print(f"{px.name} picks a card: ")
-    card = px.pick_card(f"{px:hand}")
-    print(f"{px.name} plays {card['number']} {card['type']}\n\n{px:hand} left\n")
-    return int(card['truco'])
-
-
 def score(px, py, settings, phase=None):
     # Sum envido points to personal score
     if phase == "envido":
@@ -522,6 +478,30 @@ def score(px, py, settings, phase=None):
         exit_game("winner")
     else:    
         return
+
+
+def set_menu(list, call=None):
+    menu = Menu(list)
+    if call == "envido":
+        print(f"{menu:horizontal}\n")
+    else:
+        print(f"{menu}\n")
+        
+    # Check user answer
+    while True:
+        choise = input("Command: ").strip().lower().replace("exit", "quit")
+        if menu.in_menu(choise):
+            return choise
+
+
+def set_deck(filerute):
+    try:
+        with open(filerute) as file: 
+            csv_file = csv.DictReader(file)       
+            cards_list = [row for row in csv_file]  
+    except FileNotFoundError:
+        exit("Can't open cards values file")  
+    return cards_list
 
 
 if __name__ == "__main__":

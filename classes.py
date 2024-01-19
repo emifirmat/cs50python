@@ -19,16 +19,14 @@ class Menu:
         else:
             return self.__str__()
     
-    def get_answer(self):
-        while True:
-            choise = input("Command: ").strip().lower() 
-            if choise == "quit" or choise == "exit":
-                return choise
-            else:
-                for line in self.menu:
-                    if choise in line: 
-                        print()
-                        return choise 
+    def in_menu(self, choise):
+        if choise == "quit":
+            return True
+        for line in self.menu:
+            if choise in line: 
+                print()
+                return True 
+        return False
             
 
 class Deck:
