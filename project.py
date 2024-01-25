@@ -4,7 +4,7 @@ from time import sleep
 from pyfiglet import Figlet
 from classes import *
 from tabulate import tabulate
-import random, csv, re, itertools
+import random, csv, re, pc
 
 
 # Constant variables
@@ -79,7 +79,7 @@ def main():
                         # Rejected truco
                         if p1card == False:
                             break
-                        p2card = turn(p2, p1, settings)
+                        p2card = turn(p2, p1, settings, p1card)
                         if p2card == False:
                             break
 
@@ -159,7 +159,7 @@ def exit_game(msg=None):
     return
 
 
-def turn(px, py, settings):
+def turn(px, py, settings, p1card=None):
     # Print turn
     print(f"It's {px}'s turn...\n")
     while True:
@@ -189,12 +189,12 @@ def turn(px, py, settings):
             case "truco":
                 if truco(px, py, settings):
                     # Play card after truco
-                    return play_card(px)
+                    return play_card(px, settings, p1card)
                 else:
                     score(px, py, settings)
                     return False # End row
             case "play":
-                return play_card(px)
+                return play_card(px, settings, p1card)
 
 
 def envido(px, py, settings, call):  
@@ -204,7 +204,7 @@ def envido(px, py, settings, call):
     # Update envido phase
     if call == "real envido":
         phase = 1
-    if call == "falta envido":
+    elif call == "falta envido":
         phase = 2
 
     print(f"{px} says -{call.upper()}!-\n")
@@ -356,17 +356,21 @@ def truco(px, py, settings):
             return truco(py, px, settings)
             
 
-def play_card(px):
+def play_card(px, settings, p1card=None):
     print(f"{px.name} picks a card: ")
-    while True:
-        try:
-            number, c_type = input(f"{px:hand}\n").lower().strip().split(" ")
-            card = px.pick_card(number, c_type)
-            print(f"\n{px.name} plays {card['number']} {card['type']}\n\n{px:hand} left\n")
-        except (ValueError, TypeError):
-            continue
-        else:
-            return int(card['truco'])
+    if px.name == "PC":
+        card = pc.pc_choose_card(settings.phase, px.first, settings.phase_winner, px.hand, p1card)
+        px.hand.remove(card)   
+    else:    
+        while True:
+            try:
+                number, c_type = input(f"{px:hand}\n").lower().strip().split(" ")
+                card = px.pick_card(number, c_type)
+                break
+            except (ValueError, TypeError):
+                continue
+    print(f"\n{px.name} plays {card['number']} {card['type']}\n\n{px:hand} left\n")       
+    return int(card['truco'])
 
 
 def end_phase(p1card, p2card, p1, p2, settings):

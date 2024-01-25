@@ -1,4 +1,4 @@
-import pytest, random
+import pytest
 from classes import Menu, Deck, Hand, Player, Settings
 from project import set_deck
 from unittest.mock import patch

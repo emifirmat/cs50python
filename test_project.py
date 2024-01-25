@@ -2,10 +2,21 @@ import pytest
 from project import *
 from classes import *
 from unittest.mock import patch
-from test_classes import cards
 
 
 # Initialize classes
+@pytest.fixture
+def cards():
+    cards = [
+        {"number": "4", "type":"club", "truco": "1", "envido": "4"},
+        {"number": "4", "type":"sword", "truco": "1", "envido": "4"},
+        {"number": "5", "type":"sword", "truco": "2", "envido": "5"},
+        {"number": "10", "type":"coin", "truco": "7", "envido": "0"},
+        {"number": "7", "type":"club", "truco": "4", "envido": "7"},
+        {"number": "6", "type":"cup", "truco": "3", "envido": "6"},
+    ]
+    return cards
+
 @pytest.fixture
 def p1(cards):
     p1 = Player("Emi")
@@ -25,7 +36,6 @@ def p2(cards):
 @pytest.fixture
 def set():
     return Settings()
-
 
 @patch("builtins.input", side_effect=[" quit", "exit ", "Intro", " ScoRes "])
 def test_set_menu(mock):
@@ -88,11 +98,11 @@ def test_choose_dealer_SecondRow(p1, p2, set):
     assert choose_dealer(p1, p2, set) == (p2, p1) 
 
 @patch("builtins.input", side_effect=["4 sw", "4 sword club", "4 sword", "7 club", "5 sword"])
-def test_play_card(mock, p1):
+def test_play_card(mock, p1, set):
     # Iterate until getting a valid input 4 sword
-    assert play_card(p1) == 1
+    assert play_card(p1, set) == 1
     # 7 club invalid input, 5 sword valid
-    assert play_card(p1) == 2
+    assert play_card(p1, set) == 2
 
 @patch("project.set_menu", side_effect=["accept", "reject"])
 def test_truco_accept(mock, p1, p2, set):
