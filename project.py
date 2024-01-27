@@ -62,11 +62,15 @@ def main():
                     """Start phase"""
                     for _ in range(TOTAL_PHASES):                
                         settings.new_phase()
+                        # Copy temp hand for envido and truco situations
+                        for p in [p1, p2]:
+                            p.temp_hand = p.hand[:]
                         print(f"Starting phase {settings.phase}...\n")
 
                         # Set phase 2 - 3 
                         if settings.phase > 1:
                             settings.lock_envido()
+                            
                             # If p2 won, is first to play
                             if p2.first == True:
                                 p2, p1 = p1, p2
@@ -177,14 +181,24 @@ def turn(px, py, settings, p1card=None):
             menu = menu[1:]
         else:
             pass
-        option = set_menu(menu)
+        # Pc or player calls
+        if px.name == "PC":
+            if px.envido:
+                px.update_env_points(get_envido_points(px))
+            option = pc.call(len(menu), px.envido_points, settings.phase, settings.phase_winner, px.hand)
+        else:
+            option = set_menu(menu)
 
         # Execute option
         match option:
             case "envido":
                 settings.lock_envido()
-                choise = set_menu(["envido", "real envido", "falta envido"], "envido")
-                winner, loser = envido(px, py, settings, choise)
+                envido_list = ["envido", "real envido", "falta envido"]
+                if px.name == "PC":
+                    choice = pc.select_envido(envido_list, px.envido_points)
+                else:
+                    choice = set_menu(envido_list, "envido")
+                winner, loser = envido(px, py, settings, choice)
                 score(winner, loser, settings, "envido")
             case "truco":
                 if truco(px, py, settings):
@@ -209,14 +223,21 @@ def envido(px, py, settings, call):
 
     print(f"{px} says -{call.upper()}!-\n")
 
+    """ py answers """
     # Prompt envido options and eliminate reply option when "falta envido" is called
+    print(f"{py} answers:") 
     opt_list = [["accept"], ["reject"], ["reply"],]
     if phase > 1:
         opt_list.pop()    
-    print(f"{py} answers:")  
-    answer = set_menu(opt_list)
+     
+    if py.name == "PC":
+        if py.envido_points == 0:
+            py.update_env_points(get_envido_points(py))
+        answer = pc.answer_envido(opt_list, py.envido_points, settings.envido_score, phase)
+        print(answer)
+    else:
+        answer = set_menu(opt_list)
 
-    # Py answers
     match answer:
         case "accept":        
             winner, loser = play_envido(px, py)
@@ -247,7 +268,10 @@ def envido(px, py, settings, call):
                 phase += 1
             # Order new menu and get answer
             replies = [key for row in chain[phase:] for key in row.keys()]   
-            reply = set_menu(replies, "envido")
+            if py.name == "PC":
+                reply = pc.reply_envido(replies, py.envido_points, phase)
+            else:
+                reply = set_menu(replies, "envido")
             return envido(py, px, settings, reply)
 
 
@@ -283,7 +307,7 @@ def get_envido_points(p):
     
     if type_filter is not None:
         # Get and sort cards of the filter type
-        env_cards = list(filter(lambda card: card['type'] == type_filter, p.fullhand))
+        env_cards = list(filter(lambda card: card['type'] == type_filter, p.temp_hand))
         env_cards = sorted(env_cards, key=lambda x: x['envido'], reverse=True) 
         
         # If there are 3 cards of the same type, remove the one with less value
@@ -293,7 +317,7 @@ def get_envido_points(p):
         points = 20
     else: 
         # Leave only the card with the highest points
-        env_cards = list(sorted(p.fullhand, key=lambda x: x['envido'], reverse=True))
+        env_cards = list(sorted(p.temp_hand, key=lambda x: x['envido'], reverse=True))
         while len(env_cards) != 1:
             env_cards.pop()
     # Add points 
@@ -305,8 +329,8 @@ def get_envido_points(p):
 def search_type(p):
     for n in range(TOTAL_CARDS):
         for j in range(n + 1, TOTAL_CARDS):
-            if p.fullhand[n]['type'] == p.fullhand[j]['type']:
-                return p.fullhand[n]['type']
+            if p.temp_hand[n]['type'] == p.temp_hand[j]['type']:
+                return p.temp_hand[n]['type']
     return
 
 
@@ -327,11 +351,16 @@ def truco(px, py, settings):
     if phase > 1:
         opt_list.pop()    
     
-    # Prompt truco options
+    """ py answers"""
     print(f"{py} answers:")  
-    answer = set_menu(opt_list)
+    # PC answers
+    if py.name == "PC":
+        answer = pc.answer_truco(settings.phase, settings.phase_winner, opt_list, py.temp_hand) 
+        print(answer) 
+    else:
+        # User answers
+        answer = set_menu(opt_list)
 
-    # py answers
     match answer:
         case "accept":
             # Vale 4 vs other truco calls
@@ -357,10 +386,9 @@ def truco(px, py, settings):
             
 
 def play_card(px, settings, p1card=None):
-    print(f"{px.name} picks a card: ")
+    print(f"{px.name} picks a card: ")    
     if px.name == "PC":
-        card = pc.pc_choose_card(settings.phase, px.first, settings.phase_winner, px.hand, p1card)
-        px.hand.remove(card)   
+        card = pc.choose_card(settings.phase, px.first, settings.phase_winner, px.hand, p1card)
     else:    
         while True:
             try:
@@ -368,7 +396,8 @@ def play_card(px, settings, p1card=None):
                 card = px.pick_card(number, c_type)
                 break
             except (ValueError, TypeError):
-                continue
+                continue   
+    px.hand.remove(card)                    
     print(f"\n{px.name} plays {card['number']} {card['type']}\n\n{px:hand} left\n")       
     return int(card['truco'])
 

@@ -104,37 +104,62 @@ def test_play_card(mock, p1, set):
     # 7 club invalid input, 5 sword valid
     assert play_card(p1, set) == 2
 
-@patch("project.set_menu", side_effect=["accept", "reject"])
-def test_truco_accept(mock, p1, p2, set):
-    assert truco(p1, p2, set) == True
-    assert set.envido == False
-    assert set.truco_phase == 1
-    assert set.truco_score == 2
-    assert p1.truco_call == False
-    assert p2.truco_call == True
+def test_truco_accept(p1, p2, set):
+    # Emi call, pc accepts
+    with patch("pc.answer_truco", return_value="accept"):
+        assert truco(p1, p2, set) == True
+        assert set.envido == False
+        assert set.truco_phase == 1
+        assert set.truco_score == 2
+        assert p1.truco_call == False
+        assert p2.truco_call == True
+    set.restart_values()
+    p1.restart_values()
+    p2.restart_values()
 
-@patch("project.set_menu", return_value="reject")
-def test_truco_reject(mock, p1, p2, set):
-    assert truco(p1, p2, set) == False
-    assert set.truco_phase == 0
-    assert set.truco_score == 1
+    # PC call, emi accepts
+    with patch("project.set_menu", return_value="accept"):
+        assert truco(p2, p1, set) == True
+        assert set.envido == False
+        assert set.truco_phase == 1
+        assert set.truco_score == 2
+        assert p2.truco_call == False
+        assert p1.truco_call == True
 
-@patch("project.set_menu", side_effect=["reply", "reply", "accept"])
-def test_truco_full_replies(mock, p1, p2, set):
-    assert truco(p1, p2, set) == True
-    assert set.envido == False
-    assert set.truco_phase == 2
-    assert set.truco_score == 4
-    assert p1.truco_call == False
-    assert p2.truco_call == False
+def test_truco_reject(p1, p2, set):
+    with patch("pc.answer_truco", return_value="reject"):
+        assert truco(p1, p2, set) == False
+        assert set.truco_phase == 0
+        assert set.truco_score == 1
+    set.restart_values()
 
-@patch("project.set_menu", side_effect=["reply", "reject"])
-def test_truco_partial_replies(mock, p1, p2, set):
-    assert truco(p1, p2, set) == False
-    assert set.truco_phase == 1
-    assert set.truco_score == 2
+    with patch("project.set_menu", return_value="reject"):
+        assert truco(p2, p1, set) == False
+        assert set.truco_phase == 0
+        assert set.truco_score == 1
 
-def test_seach_type(p1, p2):
+def test_truco_full_replies(p1, p2, set):
+    with (
+        patch("pc.answer_truco", side_effect=["reply", "accept"]),
+        patch("project.set_menu", return_value="reply"),
+    ):
+        assert truco(p1, p2, set) == True
+        assert set.envido == False
+        assert set.truco_phase == 2
+        assert set.truco_score == 4
+        assert p1.truco_call == False
+        assert p2.truco_call == False
+
+def test_truco_partial_replies(p1, p2, set):
+    with (
+        patch("pc.answer_truco", return_value="reply"),
+        patch("project.set_menu", return_value="reject"),
+    ):
+        assert truco(p1, p2, set) == False
+        assert set.truco_phase == 1
+        assert set.truco_score == 2
+
+def test_search_type(p1, p2):
     assert search_type(p1) == "sword"
     assert search_type(p2) == None
     # two cards in hand
@@ -168,9 +193,10 @@ def test_envido_accept(p1, p2, set):
     with (
         patch("project.set_menu", return_value="accept"),
         patch("project.play_envido", side_effect=[(p1, p2), (p2, p1)]),
+        patch("pc.answer_envido", return_value="accept")
     ):
         # p1 won envido
-        assert envido(p1, p2, set, "envido") == (p1, p2)
+        assert envido(p2, p1, set, "envido") == (p1, p2)
         assert set.envido_score == 2
         set.restart_values()
         
@@ -191,8 +217,10 @@ def test_envido_reject(mock, p1, p2, set):
 
 def test_envido_call(p1, p2, set):
     with (
-        patch("project.set_menu", side_effect=["reply", "envido", "accept"]),
+        patch("project.set_menu", return_value="accept"),
         patch("project.play_envido", return_value=(p2, p1)),
+        patch("pc.answer_envido", return_value="reply"),
+        patch("pc.reply_envido", return_value="envido")
     ):
         # P1 called envido, p2 envido, p1 accepted, p2 won
         assert envido(p1, p2, set, "envido") == (p2, p1)
@@ -200,7 +228,9 @@ def test_envido_call(p1, p2, set):
         assert set.envido_score == 4
     set.restart_values()
     with (
-        patch("project.set_menu", side_effect=["reply", "envido", "reply", "real envido", "reply", "falta envido", "reject"]),
+        patch("project.set_menu", side_effect=["reply", "envido", "reply", "falta envido"]),
+        patch("pc.answer_envido", side_effect=["reply", "reject"]),
+        patch("pc.reply_envido", return_value="real envido")
     ):
         # P2 envido, p1 envido, p2 re, p1 fe, p2 reject. p1 wins 
         assert envido(p2, p1, set, "envido") == (p1, p2)

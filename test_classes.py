@@ -78,12 +78,12 @@ def test_Hand_add_cards(hand, cards):
     # Add a card
     hand.add_card(cards[0])
     assert hand.hand == [{"number": "4", "type":"club", "truco": "1", "envido": "4"}]
-    assert hand.fullhand == [cards[0]]
+    assert hand.temp_hand == [cards[0]]
     # Add 2 more cards
     hand.add_card(cards[1])
     hand.add_card(cards[2])
     assert hand.hand == cards[:3]
-    assert hand.fullhand == [
+    assert hand.temp_hand == [
         {"number": "4", "type":"club", "truco": "1", "envido": "4"},
         {"number": "4", "type":"sword", "truco": "1", "envido": "4"},
         {"number": "5", "type":"sword", "truco": "2", "envido": "5"},
@@ -96,10 +96,12 @@ def test_Hand_add_cards(hand, cards):
 def test_Hand_pick_card(fullhand):
     picked = fullhand.pick_card("4", "sword")
     assert picked == {"number": "4", "type":"sword", "truco": "1", "envido": "4"}
-    assert fullhand.hand == [
-        {"number": "4", "type":"club", "truco": "1", "envido": "4"},
-        {"number": "5", "type":"sword", "truco": "2", "envido": "5"},
-    ]
+
+    with pytest.raises(TypeError):
+        fullhand.pick_card("4", "swor")
+    # 2 cards
+    picked = fullhand.pick_card("5", "sword")
+    assert picked == {"number": "5", "type":"sword", "truco": "2", "envido": "5"}
 
 
 def test_Player_attributes(p1):

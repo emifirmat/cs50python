@@ -101,7 +101,7 @@ class Points:
 class Hand:
     def __init__(self):
         self.hand = []
-        self.fullhand = []
+        self.temp_hand = []
 
     @property
     def hand(self):
@@ -112,31 +112,30 @@ class Hand:
         self._hand = list
 
     @property
-    def fullhand(self):
-        return self._fullhand
+    def temp_hand(self):
+        return self._temp_hand
     
-    @fullhand.setter
-    def fullhand(self, list):
-        self._fullhand = list
+    @temp_hand.setter
+    def temp_hand(self, list):
+        self._temp_hand = list
 
     def add_card(self, card):    
         # Note: 
-        if len(self.hand) > 2 or len(self.fullhand) > 2:
+        if len(self.hand) > 2:
             raise ValueError("Too many cards in hand!")
-        self.fullhand.append(card)
         self.hand.append(card)
+        self.temp_hand.append(card)
     
-    def pick_card(self, number, c_type):
+    def pick_card(self, number, c_type):     
         for card in self.hand:
-            if card["number"] == number and card["type"] == c_type:
-                # Remove card from hand
-                self.hand = list(filter(lambda x: x != card, self.hand))    
+            if card["number"] == number and card["type"] == c_type:    
                 # Return picked card
                 return card
-        
+        raise TypeError
+
     def clean_hand(self):
         self.hand = []
-        self.fullhand = []
+        self.temp_hand = []
 
     def __len__(self):
         return len(self.hand)
