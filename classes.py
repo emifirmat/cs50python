@@ -1,5 +1,5 @@
 from random import shuffle, randint
-
+from termcolor import colored
 
 class Menu:
     def __init__(self, list):
@@ -90,7 +90,9 @@ class Points:
         self._game_score += points 
 
     def update_env_points(self, points):
-        self._envido_points += points
+        if points > 33:
+            raise ValueError("Envido points exceed limit")    
+        self._envido_points = points
 
     def restart_env_points(self):  
         self._envido_points = 0   
@@ -191,7 +193,10 @@ class Player(Points, Hand):
         self.restart_phase_point()
 
     def __str__(self):
-        return f"{self.name}"   
+        if self.name == "PC":
+            return f"{colored(self.name, 'red', attrs=['bold'])}"
+        else:
+            return f"{colored(self.name, 'green', attrs=['bold'])}"   
 
     def __format__(self, format_spec):
         if format_spec == "hand":

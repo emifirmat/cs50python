@@ -1,8 +1,7 @@
-import pytest
+import pytest, time
 from project import *
 from classes import *
 from unittest.mock import patch
-
 
 # Initialize classes
 @pytest.fixture
@@ -37,6 +36,7 @@ def p2(cards):
 def set():
     return Settings()
 
+  
 @patch("builtins.input", side_effect=[" quit", "exit ", "Intro", " ScoRes "])
 def test_set_menu(mock):
     # Create list and borrow Menu class for testing 
@@ -176,17 +176,20 @@ def test_get_envido_points(mock, p1, p2):
     assert get_envido_points(p1) == 29
     assert get_envido_points(p2) == 7
 
-@patch("project.get_envido_points", side_effect=[26, 30, 29, 20, 0, 0])
+@patch("project.get_envido_points", side_effect=[30, 20, 0])
 def test_play_envido(mock, p1, p2):
     # Caller wins
+    p2.update_env_points(26)
     assert play_envido(p1, p2) == (p1, p2)
     
     # Caller loses
     [p.restart_env_points() for p in [p1, p2]]
+    p2.update_env_points(29)
     assert play_envido(p1, p2) == (p2, p1)
     
     # Tie (caller loses)
     [p.restart_env_points() for p in [p1, p2]]
+    p2.update_env_points(0)
     assert play_envido(p1, p2) == (p2, p1)
 
 def test_envido_accept(p1, p2, set):
@@ -204,16 +207,17 @@ def test_envido_accept(p1, p2, set):
         assert envido(p1, p2, set, "falta envido") == (p2, p1)
         assert set.envido_score == 30
 
-@patch("project.set_menu", return_value="reject")
-def test_envido_reject(mock, p1, p2, set):
+def test_envido_reject(p1, p2, set):
     # Reject real envido - p1 called, p2 answered
-    assert envido(p1, p2, set, "real envido") == (p1, p2)
-    assert set.envido_score == 1
+    with patch("pc.answer_envido", return_value="reject"):
+        assert envido(p1, p2, set, "real envido") == (p1, p2)
+        assert set.envido_score == 1
     set.restart_values()
     
     # p2 called falta envido, p1 rejected
-    assert envido(p2, p1, set, "falta envido") == (p2, p1)
-    assert set.envido_score == 1
+    with patch("project.set_menu", return_value="reject"):
+        assert envido(p2, p1, set, "falta envido") == (p2, p1)
+        assert set.envido_score == 1
 
 def test_envido_call(p1, p2, set):
     with (
@@ -274,8 +278,15 @@ def test_end_row_ties(p1, p2, set):
     # p2 won ph1, p1 won ph2, tie ph3
     for _ in range(3):
         set.new_phase()
-    set.phase_winner.extend([p2.name, p1.name, "tie"])
+    set.phase_winner.extend([p1.name, p2.name, "tie"])
     p2.add_phase_point()
+    assert end_row(p1, p2, set) == p1
+    set.restart_values()
+    
+    # p2 won ph1, p1 won ph2, tie ph3
+    for _ in range(3):
+        set.new_phase()
+    set.phase_winner.extend([p2.name, p1.name, "tie"])
     assert end_row(p1, p2, set) == p2
     set.restart_values()
     p1.restart_values()

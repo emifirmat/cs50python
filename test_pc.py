@@ -139,10 +139,11 @@ def test_assign_weight_firstRow(list):
     assert assign_weight({}, 1, ["PC"], list, ["t1", "t1", "t3"]) == {"accept": 0.15, "reject": 0.75, "reply": 0.10}
     assert assign_weight({}, 1, ["PC"], list, ["t2", "t2", "t3"]) == {"accept": 0.60, "reject": 0.20, "reply": 0.20}
     assert assign_weight({}, 1, ["PC"], list, ["t3", "t3", "t3"]) == {"accept": 0.40, "reject": 0.00, "reply": 0.60}
+    
     # Test calls
-    list = [True, False]
-    assert assign_weight({}, 1, [""], list, ["t1", "t2", "t3"]) == {True: 0.55, False: 0.45}
-    assert assign_weight({}, 1, [""], list, ["t3", "t3", "t3"]) == {True: 0.07, False: 0.90}
+    list = ["True", "False"]
+    assert assign_weight({}, 1, [""], list, ["t1", "t2", "t3"]) == {"True": 0.55, "False": 0.45}
+    assert assign_weight({}, 1, [""], list, ["t3", "t3", "t3"]) == {"True": 1.00, "False": 0.00}
 
 
 def test_assign_weight_secondRow(list):
@@ -156,6 +157,13 @@ def test_assign_weight_secondRow(list):
     assert assign_weight({}, 2, ["emi"], list, ["t1", "t2"]) == {"accept": 0.10, "reject": 0.83, "reply": 0.07}
     assert assign_weight({}, 2, ["emi"], list, ["t2", "t3"]) == {"accept": 0.45, "reject": 0.20, "reply": 0.35} 
 
+    # Test calls
+    list = ["True", "False"]
+    assert assign_weight({}, 2, ["PC"], list, ["t1", "t1"]) == {"True": 0.40, "False": 0.60}
+    assert assign_weight({}, 2, ["tie"], list, ["t1", "t2"]) == {"True": 0.15, "False": 0.85}
+    assert assign_weight({}, 2, ["emi"], list, ["t3", "t3"]) == {"True": 0.95, "False": 0.05}
+
+
 def test_assign_weight_thirdRow(list):
     assert assign_weight({}, 3, ["PC"], list, ["t1"]) == {"accept": 0.05, "reject": 0.40, "reply": 0.55}
     assert assign_weight({}, 3, ["PC"], list, ["t2"]) == {"accept": 0.20, "reject": 0.20, "reply": 0.60}
@@ -165,7 +173,13 @@ def test_assign_weight_thirdRow(list):
     assert assign_weight({}, 3, ["tie"], list, ["t3"]) == {"accept": 0.10, "reject": 0.05, "reply": 0.85} 
     assert assign_weight({}, 3, ["emi"], list, ["t1"]) == {"accept": 0.05, "reject": 0.90, "reply": 0.05}
     assert assign_weight({}, 3, ["emi"], list, ["t2"]) == {"accept": 0.20, "reject": 0.50, "reply": 0.30}
-    assert assign_weight({}, 3, ["emi"], list, ["t3"]) == {"accept": 0.45, "reject": 0.10, "reply": 0.45}   
+    assert assign_weight({}, 3, ["emi"], list, ["t3"]) == {"accept": 0.45, "reject": 0.10, "reply": 0.45} 
+
+    # Test calls
+    list = ["True", "False"]
+    assert assign_weight({}, 3, ["PC"], list, ["t2"]) == {"True": 0.80, "False": 0.20}
+    assert assign_weight({}, 3, ["tie"], list, ["t3"]) == {"True": 0.95, "False": 0.05}
+    assert assign_weight({}, 3, ["emi"], list, ["t1"]) == {"True": 0.05, "False": 0.95}  
 
 def test_answer_truco_IndexError(low):
     low.pop()

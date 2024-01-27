@@ -1,5 +1,5 @@
 import pytest
-from classes import Menu, Deck, Hand, Player, Settings
+from classes import Menu, Deck, Hand, Player, Settings, Points
 from project import set_deck
 from unittest.mock import patch
 
@@ -128,6 +128,13 @@ def test_Player_format(p1, cards):
         p1.add_card(card)
     assert f"{p1:hand}" == "[4 club] [4 sword] [5 sword]"
 
+
+def test_Points_envido_points():
+    points = Points()
+    with pytest.raises(ValueError, match="Envido points exceed limit"):
+        points.update_env_points(34)
+    points.update_env_points(33) 
+    assert points.envido_points == 33
 
 def test_Settings_attributes(set):
     # Test direct changes

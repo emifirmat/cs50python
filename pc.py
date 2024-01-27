@@ -28,19 +28,24 @@ def call(opt_size, envido_points, game_phase, phase_winner, hand):
         return "play"
 
 def call_truco(game_phase, phase_winner, hand):
-    return answer_truco(game_phase, phase_winner, [True, False], hand)
+    answer = answer_truco(game_phase, phase_winner, [["True"], ["False"]], hand)
+    return bool(answer)
 
 
 def call_envido(envido_points):
     quartile = assign_quartile(envido_points)
-    opt_list = [True, False]
+    opt_list = ["True", "False"]
     weight = assign_envido_weight(opt_list, quartile, 0, 0)
-    return random.choices(opt_list, [weight[opt_list[0]], weight[opt_list[1]]])
+    answer = random.choices(opt_list, [weight[opt_list[0]], weight[opt_list[1]]])
+    return bool(answer[0])
+
 
 def select_envido(opt_list, envido_points):
     quartile = assign_quartile(envido_points)
     weight = assign_envido_reply_weight(opt_list, quartile, 0)
-    return random.choices(opt_list,[weight[opt_list[0]], weight[opt_list[1]], weight[opt_list[2]]])
+    answer = random.choices(opt_list,[weight[opt_list[0]], weight[opt_list[1]], weight[opt_list[2]]])
+    return answer[0]
+
 
 def answer_envido(opt_list, envido_points, envido_score, envido_phase):
     opt_list = list(chain(*opt_list))
@@ -76,6 +81,9 @@ def answer_truco(phase, phase_winner, opt_list, hand):
     if (4 - phase) != len(hand):
         raise IndexError("Wrong number of cars in hand")
 
+    # Flatten list of lists
+    opt_list = list(chain(*opt_list))
+ 
     # Get tertiles ordered from lowest to highest
     hand = sort_hand(hand)
     cards = [card for card in assign_tertile(hand)]
@@ -85,10 +93,10 @@ def answer_truco(phase, phase_winner, opt_list, hand):
     
     # Give an answer        
     try:
-        answer = random.choices(opt_list, [weight[opt_list[0][0]], weight[opt_list[1][0]], weight[opt_list[2][0]]])
+        answer = random.choices(opt_list, [weight[opt_list[0]], weight[opt_list[1]], weight[opt_list[2]]])
     except IndexError:
-        answer = random.choices(opt_list, [weight[opt_list[0][0]], weight[opt_list[1][0]]])
-    return answer[0][0]
+        answer = random.choices(opt_list, [weight[opt_list[0]], weight[opt_list[1]]])
+    return answer[0]
 
 
 def choose_card(row_phase, play_first, phase_winner, hand, table_value):
@@ -154,26 +162,26 @@ def assign_weight(weight, phase, phase_winner, opt_list, cards):
     if len(phase_winner) > 0:
         phase_winner = phase_winner[0]
     if phase == 1:
-        # highest t1
+        # First highest card
         if cards[-1] == "t1":
             weight = add_weight(weight, opt_list, 0.03, 0.96, 0.01)
-        # highest t2
         elif cards[-1] == "t2":
+            # Second highest card
             if cards[-2] == "t1":
+                # Third highest card
                 weight = add_weight(weight, opt_list, 0.07, 0.90, 0.03)
             elif cards[-2] == "t2":
                 if cards[-3] == "t1":
                     weight = add_weight(weight, opt_list, 0.20, 0.75, 0.05)
                 else:
                     weight = add_weight(weight, opt_list, 0.30, 0.60, 0.10)
-        # highest t3
-        else:
+        elif cards[-1] == "t3":
             if cards[-2] == "t1":
                 weight = add_weight(weight, opt_list, 0.15, 0.75, 0.10)
             elif cards[-2] == "t2": 
                     if cards[-3] == "t1":
                         weight = add_weight(weight, opt_list, 0.40, 0.45, 0.15)
-                    else:
+                    elif cards[-3] == "t2":
                         weight = add_weight(weight, opt_list, 0.60, 0.20, 0.20)
             else:
                 if cards[-3] == "t1":
@@ -324,35 +332,35 @@ def assign_envido_reply_weight(opt_list, quartile, envido_phase):
 
 
 def add_envido_weight(opt_list, opt_1, opt_2, opt_3=0):
-    sum = opt_1 + opt_2 + opt_3
+    sum = round(opt_1 + opt_2 + opt_3, 2)
     # Make function versatile for call_envido function
     if len(opt_list) == 2:
         opt_1 += opt_3
-    if sum < 0.999 or sum > 1.001:
+    if sum != 1:
         raise ValueError("Weight sum is not 1")
     weight = {}
     weight[opt_list[0]] = round(opt_1, 2)
-    weight[opt_list[1]] = round(opt_2, 2)
+    weight[opt_list[1]] = opt_2
     if len(opt_list) == 3:
-        weight[opt_list[2]] = round(opt_3, 2)
+        weight[opt_list[2]] = opt_3
     return weight
 
 
 def add_weight(weight, opt_list, accept, reject, reply, reverse=None):
-    sum = accept + reject + reply
+    sum = round(accept + reject + reply, 2)
     size = len(opt_list)
-    if sum < 0.999 or sum > 1.001:
+    if sum != 1:
         raise ValueError("Weight sum is not 1")
     if size == 3:
-        weight["accept"] = accept
-        weight["reject"] = reject
-        weight["reply"] = reply
+        weight[opt_list[0]] = accept
+        weight[opt_list[1]] = reject
+        weight[opt_list[2]] = reply
     elif size == 2 and reverse == "yes":
-        weight["accept"] = accept 
-        weight["reject"] = reject + reply
+        weight[opt_list[0]] = accept 
+        weight[opt_list[1]] = round(reject + reply, 2)
     else:
-        weight["accept"] = accept + reply
-        weight["reject"] = reject
+        weight[opt_list[0]] = round(accept + reply, 2)
+        weight[opt_list[1]] = reject
     return weight
 
 

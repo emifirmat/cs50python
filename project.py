@@ -4,6 +4,7 @@ from time import sleep
 from pyfiglet import Figlet
 from classes import *
 from tabulate import tabulate
+from termcolor import colored, cprint
 import random, csv, re, pc
 
 
@@ -38,7 +39,11 @@ def main():
                 p1, p2 = Player("Emi"), Player("PC")
                 full_deck = set_deck("cards_values.csv")
                 
-                print(f"Starting game...\n\nThe first who reaches {goal_scre} points wins\n")               
+                cprint(f"Starting game...\n", "white", attrs=["bold"])
+                
+                f_text = colored(str(goal_scre) + ' POINTS', 'light_green', attrs=['bold'])
+                print(f"<<< The first who reaches {f_text} wins >>>\n")               
+                sleep(2)
 
                 """ Start Row """
                 while True:
@@ -48,7 +53,9 @@ def main():
                     
                     # Start row
                     settings.new_row()
-                    print(f"Starting row {settings.row}\n")
+                    f_text = colored('row ' + str(settings.row), attrs=['bold'])
+                    print(f"-----Starting {f_text}-----\n")
+                    sleep(1)
 
                     # Shuffling
                     deck = Deck(full_deck)
@@ -65,7 +72,8 @@ def main():
                         # Copy temp hand for envido and truco situations
                         for p in [p1, p2]:
                             p.temp_hand = p.hand[:]
-                        print(f"Starting phase {settings.phase}...\n")
+                        f_text = colored('phase ' + str(settings.phase), attrs=['bold'])
+                        print(f"Starting {f_text}...\n")
 
                         # Set phase 2 - 3 
                         if settings.phase > 1:
@@ -74,18 +82,23 @@ def main():
                             # If p2 won, is first to play
                             if p2.first == True:
                                 p2, p1 = p1, p2
-                            
-                        print(f"First to play is {p1} and second to play is {p2}\n")
+                        f_text = [colored('First', 'blue'), colored('second', 'blue')]    
+                        print(f"{f_text[0]} to play is {p1} and {f_text[1]} to play is {p2}\n")
+                        sleep(2)
+                        
                         print(f"{p1} = {p1:hand}, {p2} = {p2:hand}\n") 
-                   
+                        sleep (2)
+
                         # Playing turns - First variable in turn() is current player's turn
                         p1card = turn(p1, p2, settings)   
                         # Rejected truco
                         if p1card == False:
                             break
+                        sleep(1)
                         p2card = turn(p2, p1, settings, p1card)
                         if p2card == False:
                             break
+                        sleep(1)
 
                         """ End phase """
                         end_phase(p1card, p2card, p1, p2, settings)
@@ -94,7 +107,7 @@ def main():
                         if settings.phase > 1:
                             winner = end_row(p1, p2, settings)
                             if winner:
-                                print(f"{winner} wins this row--")
+                                print(f"<< {winner} wins this row >>\n")
                                 break
     
 # Rules
@@ -183,7 +196,7 @@ def turn(px, py, settings, p1card=None):
             pass
         # Pc or player calls
         if px.name == "PC":
-            if px.envido:
+            if settings.envido:
                 px.update_env_points(get_envido_points(px))
             option = pc.call(len(menu), px.envido_points, settings.phase, settings.phase_winner, px.hand)
         else:
@@ -220,8 +233,8 @@ def envido(px, py, settings, call):
         phase = 1
     elif call == "falta envido":
         phase = 2
-
-    print(f"{px} says -{call.upper()}!-\n")
+    print(f"{px} says -{colored(call.upper() + '!', 'blue', attrs=['bold'])}-\n")
+    sleep(1)
 
     """ py answers """
     # Prompt envido options and eliminate reply option when "falta envido" is called
@@ -234,14 +247,14 @@ def envido(px, py, settings, call):
         if py.envido_points == 0:
             py.update_env_points(get_envido_points(py))
         answer = pc.answer_envido(opt_list, py.envido_points, settings.envido_score, phase)
-        print(answer)
+        print(f">> {answer.title()}\n")
     else:
         answer = set_menu(opt_list)
 
     match answer:
         case "accept":        
             winner, loser = play_envido(px, py)
-            
+
             # Update score / falta envido vs others
             if phase == 2:
                 settings.set_falta_envido(goal_scre, loser.game_score)
@@ -250,12 +263,12 @@ def envido(px, py, settings, call):
             else:
                 for value in chain[phase].values():
                     settings.envido_score += value
-            print(f"envido score = {settings.envido_score}")
+            sleep(3)
             return winner, loser
         case "reject":
+            sleep(1)
             if settings.envido_score == 0:
                 settings.envido_score = 1
-            print(f"envido score = {settings.envido_score}")
             return px, py
         case "reply":
             # Update points
@@ -276,26 +289,30 @@ def envido(px, py, settings, call):
 
 
 def play_envido(caller, replier):   
-    """ Get envido points from each player """
-    for p in (replier, caller):
-        p.update_env_points(get_envido_points(p))
+    """ Get envido points from player (PC had it before) """
+    for p in (caller, replier):
+        if p.name != "PC":
+            p.update_env_points(get_envido_points(p))
 
     """ Replier is first to play """ 
     # See hand and say points
-    print(f"{replier:hand}") 
-    print(f"{replier.name}: I have {replier.envido_points} points!")
+    print(f"{replier:hand}\n") 
+    f_text = colored(str(replier.envido_points) + ' points!', attrs=['bold'])
+    print(f"{replier}: I have {f_text}\n")
+    sleep(2)
 
     """ Caller answers """
     # See hand and say points
-    print(f"{caller:hand}")
+    print(f"{caller:hand}\n")
 
     # Replier wins (tie included)
     if caller.envido_points <= replier.envido_points:
-        print(f"{caller.name}: Son buenas!")
+        print(f"{caller}: Son buenas!\n")
         return replier, caller
     # Caller wins
     else:
-        print(f"{caller.name}: And I have {caller.envido_points} points. I win!")    
+        f_text = colored(str(caller.envido_points) + ' points!', attrs=['bold'])
+        print(f"{caller}: And I have {f_text} I win!\n")    
         return caller, replier
 
 
@@ -339,14 +356,14 @@ def truco(px, py, settings):
     chain = settings.truco_chain
     
     for key in chain[phase]:
-        print(f"{px} says -{key.upper()}!-\n") 
+        print(f"{px} says -{colored(key.upper() + '!', 'blue', attrs=['bold'])}-\n") 
+    sleep(1)
 
     opt_list = [
         ["accept"],
         ["reject"],
         ["reply"],
     ]
-
     # Eliminate reply option when "vale 4 is called"
     if phase > 1:
         opt_list.pop()    
@@ -356,10 +373,10 @@ def truco(px, py, settings):
     # PC answers
     if py.name == "PC":
         answer = pc.answer_truco(settings.phase, settings.phase_winner, opt_list, py.temp_hand) 
-        print(answer) 
+        print(f">> {answer.title()}\n") 
     else:
         # User answers
-        answer = set_menu(opt_list)
+        answer = set_menu(opt_list, "horizontal")
 
     match answer:
         case "accept":
@@ -376,9 +393,10 @@ def truco(px, py, settings):
                 settings.truco_score = value
             return True
         case "reject":
+            sleep(1)
             for value in chain[phase].values():
                 settings.truco_score = value - 1
-            print(f"{px} wins this row--\n")
+            print(f"<< {px} wins this row >>\n")
             return False
         case "reply":
             settings.new_truco_phase()
@@ -386,25 +404,28 @@ def truco(px, py, settings):
             
 
 def play_card(px, settings, p1card=None):
-    print(f"{px.name} picks a card: ")    
+    print(f"{px} picks a card...")
+    sleep(1)    
     if px.name == "PC":
         card = pc.choose_card(settings.phase, px.first, settings.phase_winner, px.hand, p1card)
     else:    
         while True:
             try:
-                number, c_type = input(f"{px:hand}\n").lower().strip().split(" ")
+                number, c_type = input(f"{px:hand}\n>> ").lower().strip().split(" ")
                 card = px.pick_card(number, c_type)
                 break
             except (ValueError, TypeError):
                 continue   
     px.hand.remove(card)                    
-    print(f"\n{px.name} plays {card['number']} {card['type']}\n\n{px:hand} left\n")       
+    f_text = colored(str(card['number']) + ' ' + str(card['type']), 'blue', attrs=['bold'])
+    print(f"\n** {px} plays {f_text} **\n")       
+    print(f"{px:hand} left\n")
     return int(card['truco'])
 
 
 def end_phase(p1card, p2card, p1, p2, settings):
     # Compare cards
-    msg = f"The winner of phase {settings} is"
+    msg = f"The winner of {colored('phase ' + str(settings), attrs=['bold'])} is"
     
     # P1 wins
     if p1card > p2card:
@@ -423,8 +444,8 @@ def end_phase(p1card, p2card, p1, p2, settings):
         settings.phase_winner.append("tie")
         msg = f"There is a"
     print(f"{msg} {settings:phasew}\n")
-    print(f"Current phase points: {p1} {p1.phase_point} {p2} {p2.phase_point}")
-    print(f"Current truco points: {settings.truco_score}")
+    print(f"Current phase points: {p1} {p1.phase_point} {p2} {p2.phase_point}\n")
+    sleep(1)
 
 
 def end_row(p1, p2, settings):
@@ -477,9 +498,9 @@ def score(px, py, settings, phase=None):
 
     # Print score points
     settings.update_row_points(settings.envido_score, settings.truco_score)
-    print(f"{px} POINTS --> {px.game_score}")
-    print(f"{py} POINTS --> {py.game_score}")
-    print(f"GAME SCORE POINTS --> {settings.row_points}")
+    print(f"{px} TOTAL POINTS --> {px.game_score}")
+    print(f"{py} TOTAL POINTS --> {py.game_score}")
+    print(f"CURRENT ROW SCORE POINTS --> {settings.row_points}\n")
 
     # Compare with total score
     if px.game_score >= goal_scre:
