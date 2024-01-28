@@ -1,11 +1,11 @@
 from sys import exit
 from tabulate import tabulate
-from time import sleep
+
 from pyfiglet import Figlet
 from classes import *
 from tabulate import tabulate
 from termcolor import colored, cprint
-import random, csv, re, pc
+import random, csv, re, pc, time
 
 
 # Constant variables
@@ -43,7 +43,7 @@ def main():
                 
                 f_text = colored(str(goal_scre) + ' POINTS', 'light_green', attrs=['bold'])
                 print(f"<<< The first who reaches {f_text} wins >>>\n")               
-                sleep(2)
+                time.sleep(2)
 
                 """ Start Row """
                 while True:
@@ -55,7 +55,7 @@ def main():
                     settings.new_row()
                     f_text = colored('row ' + str(settings.row), attrs=['bold'])
                     print(f"-----Starting {f_text}-----\n")
-                    sleep(1)
+                    time.sleep(1)
 
                     # Shuffling
                     deck = Deck(full_deck)
@@ -84,21 +84,21 @@ def main():
                                 p2, p1 = p1, p2
                         f_text = [colored('First', 'blue'), colored('second', 'blue')]    
                         print(f"{f_text[0]} to play is {p1} and {f_text[1]} to play is {p2}.\n")
-                        sleep(2)
+                        time.sleep(2)
                         
                         print(f"{p1} = {p1:hand}, {p2} = {p2:hand}\n") 
-                        sleep (2)
+                        time.sleep (2)
 
                         # Playing turns - First variable in turn() is current player's turn
                         p1card = turn(p1, p2, settings)   
                         # Rejected truco
                         if p1card == False:
                             break
-                        sleep(1)
+                        time.sleep(1)
                         p2card = turn(p2, p1, settings, p1card)
                         if p2card == False:
                             break
-                        sleep(1)
+                        time.sleep(1)
 
                         """ End phase """
                         end_phase(p1card, p2card, p1, p2, settings)
@@ -135,7 +135,7 @@ def rules():
             print("Sorry, missing information, try another option")
         
         # Ask to continue or leave rules
-        sleep(1)
+        time.sleep(1)
         nchoise = input("Enter <any letter> to continue navigating or <quit> to go back to main menu.\n\n>> ")
         if nchoise == "quit":
            break
@@ -154,11 +154,11 @@ def introduction():
     name = input("--What's your name?\n\n").strip()
     name = name[0:21]
     print()
-    sleep(1)
+    time.sleep(1)
 
     # Say hello
     print(f"--Welcome {name}! Read the menu in order to start your game:", end="\n\n")    
-    sleep(2)    
+    time.sleep(2)    
 
 
 def exit_game(msg=None):
@@ -233,7 +233,7 @@ def envido(px, py, settings, call):
     elif call == "falta envido":
         phase = 2
     print(f"{px} says -{colored(call.upper() + '!', 'blue', attrs=['bold'])}-\n")
-    sleep(1)
+    time.sleep(1)
 
     """ py answers """
     # Prompt envido options and eliminate reply option when "falta envido" is called
@@ -262,10 +262,10 @@ def envido(px, py, settings, call):
             else:
                 for value in chain[phase].values():
                     settings.envido_score += value
-            sleep(3)
+            time.sleep(3)
             return winner, loser
         case "reject":
-            sleep(1)
+            time.sleep(1)
             if settings.envido_score == 0:
                 settings.envido_score = 1
             return px, py
@@ -298,7 +298,7 @@ def play_envido(caller, replier):
     print(f"{replier:hand}\n") 
     f_text = colored(str(replier.envido_points) + ' points!', attrs=['bold'])
     print(f"{replier}: I have {f_text}\n")
-    sleep(2)
+    time.sleep(2)
 
     """ Caller answers """
     # See hand and say points
@@ -356,7 +356,7 @@ def truco(px, py, settings):
     
     for key in chain[phase]:
         print(f"{px} says -{colored(key.upper() + '!', 'blue', attrs=['bold'])}-\n") 
-    sleep(1)
+    time.sleep(1)
 
     opt_list = [
         ["accept"],
@@ -392,7 +392,7 @@ def truco(px, py, settings):
                 settings.truco_score = value
             return True
         case "reject":
-            sleep(1)
+            time.sleep(1)
             for value in chain[phase].values():
                 settings.truco_score = value - 1
             print(f"<< {px} wins this row >>\n")
@@ -406,7 +406,7 @@ def truco(px, py, settings):
 
 def play_card(px, settings, p1card=None):
     print(f"{px} picks a card...")
-    sleep(1)    
+    time.sleep(1)    
     if px.name == "PC":
         card = pc.choose_card(settings.phase, px.first, settings.phase_winner, px.hand, p1card)
     else:    
@@ -446,7 +446,7 @@ def end_phase(p1card, p2card, p1, p2, settings):
         msg = f"There is a"
     print(f"{msg} {settings:phasew}\n")
     print(f"Current phase points: {p1} {p1.phase_point} {p2} {p2.phase_point}\n")
-    sleep(1)
+    time.sleep(1)
 
 
 def end_row(p1, p2, settings):

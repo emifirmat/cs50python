@@ -42,7 +42,6 @@ def call_envido(envido_points):
     return check_bool(answer[0])
 
 
-
 def select_envido(opt_list, envido_points):
     quartile = assign_quartile(envido_points)
     weight = assign_envido_reply_weight(opt_list, quartile, 0)

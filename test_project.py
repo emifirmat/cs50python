@@ -1,4 +1,4 @@
-import pytest, time
+import pytest
 from project import *
 from classes import *
 from unittest.mock import patch
@@ -36,15 +36,20 @@ def p2(cards):
 def set():
     return Settings()
 
-  
-@patch("builtins.input", side_effect=[" quit", "exit ", "Intro", " ScoRes "])
-def test_set_menu(mock):
-    # Create list and borrow Menu class for testing 
-    list = [['intro'], ['scores']]
-    Menu(list).in_menu(mock)
-    
-    for result in ["quit", "quit", "intro", "scores"]:
-        assert set_menu(list) == result
+@pytest.fixture(autouse=True)
+def non_sleep():
+    with patch("time.sleep", return_value=None) as time_mock:
+        yield time_mock
+
+def test_set_menu():
+    with(
+        patch("builtins.input", side_effect=[" quit", "exit ", "Intro", " ScoRes "]) as mock
+    ):
+        # Create list and borrow Menu class for testing 
+        list = [['intro'], ['scores']]
+        Menu(list).in_menu(mock)
+        for result in ["quit", "quit", "intro", "scores"]:
+            assert set_menu(list) == result
 
 def test_set_deck():
     # Test wrong name
@@ -66,19 +71,19 @@ def test_set_deck():
     # Test length
     assert len(deck_dict) == 40
 
-@patch("random.choice")
-def test_choose_dealer_firstRow(mock, p1, p2, set):
+
+def test_choose_dealer_firstRow(p1, p2, set):
     # Emi is dealer
-    mock.return_value = p1
-    set.new_row()
-    p1, p2 = choose_dealer(p1, p2, set)
-    assert p1.name == "PC"
-    assert p1.first == True
-    assert p1.dealer == False
-    assert p2.name == "Emi"
-    assert p2.first == False
-    assert p2.dealer == True
-    assert choose_dealer(p1, p2, set) == (p1, p2)
+    with patch("random.choice", return_value = p1):
+        set.new_row()
+        p1, p2 = choose_dealer(p1, p2, set)
+        assert p1.name == "PC"
+        assert p1.first == True
+        assert p1.dealer == False
+        assert p2.name == "Emi"
+        assert p2.first == False
+        assert p2.dealer == True
+        assert choose_dealer(p1, p2, set) == (p1, p2)
    
 def test_choose_dealer_SecondRow(p1, p2, set):
     # Set test - Emi was dealer in First row
@@ -97,12 +102,15 @@ def test_choose_dealer_SecondRow(p1, p2, set):
     assert p2.dealer == True
     assert choose_dealer(p1, p2, set) == (p2, p1) 
 
-@patch("builtins.input", side_effect=["4 sw", "4 sword club", "4 sword", "7 club", "5 sword"])
-def test_play_card(mock, p1, set):
-    # Iterate until getting a valid input 4 sword
-    assert play_card(p1, set) == 1
-    # 7 club invalid input, 5 sword valid
-    assert play_card(p1, set) == 2
+def test_play_card(p1, set):
+    with (
+        patch("builtins.input", side_effect=["4 sw", "4 sword club", "4 sword", "7 club", "5 sword"]),
+    ):
+        # Iterate until getting a valid input 4 sword
+        assert play_card(p1, set) == 1
+        # 7 club invalid input, 5 sword valid
+        assert play_card(p1, set) == 2
+
 
 def test_truco_accept(p1, p2, set):
     # Emi call, pc accepts
@@ -166,15 +174,15 @@ def test_search_type(p1, p2):
     p1.pick_card("4", "sword")
     assert search_type(p1) == "sword"
 
-@patch("project.search_type", side_effect=["sword", None, "sword", None])
-def test_get_envido_points(mock, p1, p2):
-    assert get_envido_points(p1) == 29
-    assert get_envido_points(p2) == 7
-    # 2 cards
-    p1.pick_card("4", "sword")
-    p2.pick_card("7", "club")
-    assert get_envido_points(p1) == 29
-    assert get_envido_points(p2) == 7
+def test_get_envido_points(p1, p2):
+    with patch("project.search_type", side_effect=["sword", None, "sword", None]):  
+        assert get_envido_points(p1) == 29
+        assert get_envido_points(p2) == 7
+        # 2 cards
+        p1.pick_card("4", "sword")
+        p2.pick_card("7", "club")
+        assert get_envido_points(p1) == 29
+        assert get_envido_points(p2) == 7
 
 @patch("project.get_envido_points", side_effect=[30, 20, 0])
 def test_play_envido(mock, p1, p2):
@@ -272,7 +280,7 @@ def test_end_row_ties(p1, p2, set):
         set.new_phase() 
     set.phase_winner.extend([p1.name, "tie"])
     p1.add_phase_point()
-    assert end_row(p1, p2, set) == p1
+    assert end_row(p1, p2, set) == (p1, True)
     set.restart_values()
 
     # p2 won ph1, p1 won ph2, tie ph3
@@ -280,14 +288,14 @@ def test_end_row_ties(p1, p2, set):
         set.new_phase()
     set.phase_winner.extend([p1.name, p2.name, "tie"])
     p2.add_phase_point()
-    assert end_row(p1, p2, set) == p1
+    assert end_row(p1, p2, set) == (p1, True)
     set.restart_values()
     
     # p2 won ph1, p1 won ph2, tie ph3
     for _ in range(3):
         set.new_phase()
     set.phase_winner.extend([p2.name, p1.name, "tie"])
-    assert end_row(p1, p2, set) == p2
+    assert end_row(p1, p2, set) == (p2, True)
     set.restart_values()
     p1.restart_values()
 
@@ -295,7 +303,7 @@ def test_end_row_ties(p1, p2, set):
     for _ in range(2):
         set.new_phase()
     set.phase_winner.extend(["tie", p2.name])
-    assert end_row(p1, p2, set) == p2
+    assert end_row(p1, p2, set) == (p2, True)
     set.restart_values()
     p2.restart_values()
 
@@ -304,7 +312,7 @@ def test_end_row_ties(p1, p2, set):
         set.new_phase()
     set.phase_winner.extend(["tie", "tie", p1.name])
     p1.add_phase_point()
-    assert end_row(p1, p2, set) == p1
+    assert end_row(p1, p2, set) == (p1, True)
     set.restart_values()
     p1.restart_values()
 
@@ -312,7 +320,7 @@ def test_end_row_ties(p1, p2, set):
     for _ in range(3):
         set.new_phase()
     set.phase_winner.extend(["tie", "tie", "tie"])
-    assert end_row(p1, p2, set) == p1
+    assert end_row(p1, p2, set) == (p1, True)
 
 def test_end_row_noties(p1, p2, set):
     # p1 won ph1 and ph2
@@ -320,7 +328,7 @@ def test_end_row_noties(p1, p2, set):
         set.phase_winner.append(p1.name)
         set.new_phase()
         p1.add_phase_point()
-    assert end_row(p1, p2, set) == p1
+    assert end_row(p1, p2, set) == (p1, True)
     set.restart_values()
     p1.restart_values()
 
@@ -336,7 +344,7 @@ def test_end_row_noties(p1, p2, set):
     set.new_phase()
     set.phase_winner.append(p2.name)
     p2.add_phase_point()
-    assert end_row(p1, p2, set) == p2
+    assert end_row(p1, p2, set) == (p2, True)
 
 def test_score_winner(p1, p2, set):
     # P1 won the game
