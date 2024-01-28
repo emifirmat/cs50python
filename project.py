@@ -65,6 +65,8 @@ def main():
                     # Dealing - nested loop
                     p1, p2 = choose_dealer(p1, p2, settings)
                     [p.add_card(deck.deal()) for _ in range(TOTAL_CARDS) for p in [p1, p2]] 
+                    for p in [p1, p2]:
+                        p.update_env_points(get_envido_points(p))
                     
                     """Start phase"""
                     for _ in range(TOTAL_PHASES):                
@@ -195,22 +197,14 @@ def turn(px, py, settings, p1card=None):
         else:
             pass
         # Pc or player calls
-        if px.name == "PC":
-            if settings.envido:
-                px.update_env_points(get_envido_points(px))
+        if px.name == "PC":   
             option = pc.call(len(menu), px.envido_points, settings.phase, settings.phase_winner, px.hand)
         else:
             option = set_menu(menu)
-
         # Execute option
         match option:
             case "envido":
-                settings.lock_envido()
-                envido_list = ["envido", "real envido", "falta envido"]
-                if px.name == "PC":
-                    choice = pc.select_envido(envido_list, px.envido_points)
-                else:
-                    choice = set_menu(envido_list, "envido")
+                choice = choose_envido(px, settings)
                 winner, loser = envido(px, py, settings, choice)
                 score(winner, loser, settings, "envido")
             case "truco":
@@ -243,8 +237,6 @@ def envido(px, py, settings, call):
         opt_list.pop()    
      
     if py.name == "PC":
-        if py.envido_points == 0:
-            py.update_env_points(get_envido_points(py))
         answer = pc.answer_envido(opt_list, py.envido_points, settings.envido_score, phase)
         print(f">> {answer.title()}\n")
     else:
@@ -287,12 +279,16 @@ def envido(px, py, settings, call):
             return envido(py, px, settings, reply)
 
 
-def play_envido(caller, replier):   
-    """ Get envido points from player (PC had it before) """
-    for p in (caller, replier):
-        if p.name != "PC":
-            p.update_env_points(get_envido_points(p))
+def choose_envido(px, settings):
+    settings.lock_envido()
+    envido_list = ["envido", "real envido", "falta envido"]
+    if px.name == "PC":
+        return pc.select_envido(envido_list, px.envido_points)
+    else:
+        return set_menu(envido_list, "envido")
 
+
+def play_envido(caller, replier):   
     """ Replier is first to play """ 
     # See hand and say points
     print(f"{replier:hand}\n") 
@@ -363,7 +359,11 @@ def truco(px, py, settings):
         ["reject"],
         ["reply"],
     ]
-    # Eliminate reply option when "vale 4 is called"
+    # Let second player call envido if they haven't played yet
+    if px.first == True and settings.phase == 1 and settings.envido == True:
+        opt_list.insert(0, ["envido"])
+    
+    # Eliminate reply if vale is called
     if phase > 1:
         opt_list.pop()    
     
@@ -371,13 +371,20 @@ def truco(px, py, settings):
     print(f"{py} answers:")  
     # PC answers
     if py.name == "PC":
-        answer = pc.answer_truco(settings.phase, settings.phase_winner, opt_list, py.temp_hand) 
+        answer = pc.answer_truco(settings.phase, settings.phase_winner, opt_list, py.temp_hand, py.envido_points) 
         print(f">> {answer.title()}\n") 
     else:
         # User answers
         answer = set_menu(opt_list, "horizontal")
-
     match answer:
+        case "envido":
+            # Py called envido
+            choice = choose_envido(py, settings)
+            winner, loser = envido(py, px, settings, choice)
+            score(winner, loser, settings, "envido")
+            # Retake truco
+            return truco(px, py, settings)
+
         case "accept":
             # Vale 4 vs other truco calls
             if phase == 2:

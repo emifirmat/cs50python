@@ -38,7 +38,6 @@ def list():
     return ["accept", "reject", "reply"]
 
 
-
 def test_sort_hand(high):
     assert sort_hand(high, "reverse") == [
         {"number": "1", "type":"club", "truco": "13", "envido": "1"},
@@ -106,7 +105,6 @@ def test_choose_card_firstPhase(medium, high):
     assert choose_card(1, False, None, hand2, 10) == high[0]
     assert choose_card(1, False, None, hand2, 9) == high[0]
 
-
 def test_choose_card_secondPhase(low, medium, high):
     # hand1 = [4, 9, 7] / hand2= [11, 9, 13] / hand3 = [1, 1, 2]
     hand1, hand2, hand3 = medium[:], high[:], low[:]
@@ -121,6 +119,7 @@ def test_choose_card_secondPhase(low, medium, high):
     assert choose_card(2, False, ["emi"], hand2, 10) == high[0]
     assert choose_card(2, False, ["tie"], hand3, 2) == low[0]
 
+
 def test_add_weight(list):
     with pytest.raises(ValueError, match="Weight sum is not 1"):
         add_weight({}, list, 0.35, 0.30, 0.25)
@@ -131,6 +130,7 @@ def test_add_weight(list):
     list = ["accept", "reject"]
     assert add_weight({}, list, 0.35, 0.40, 0.25) == {"accept": 0.60, "reject": 0.40}
     assert add_weight({}, list, 0.35, 0.40, 0.25, "yes") == {"accept": 0.35, "reject": 0.65}
+
 
 def test_assign_weight_firstRow(list): 
     assert assign_weight({}, 1, ["PC"], list, ["t1", "t1", "t1"]) == {"accept": 0.03, "reject": 0.96, "reply": 0.01}
@@ -144,7 +144,6 @@ def test_assign_weight_firstRow(list):
     list = ["True", "False"]
     assert assign_weight({}, 1, [""], list, ["t1", "t2", "t3"]) == {"True": 0.55, "False": 0.45}
     assert assign_weight({}, 1, [""], list, ["t3", "t3", "t3"]) == {"True": 1.00, "False": 0.00}
-
 
 def test_assign_weight_secondRow(list):
     assert assign_weight({}, 2, ["PC"], list, ["t1", "t1"]) == {"accept": 0.30, "reject": 0.60, "reply": 0.10}
@@ -163,7 +162,6 @@ def test_assign_weight_secondRow(list):
     assert assign_weight({}, 2, ["tie"], list, ["t1", "t2"]) == {"True": 0.15, "False": 0.85}
     assert assign_weight({}, 2, ["emi"], list, ["t3", "t3"]) == {"True": 0.95, "False": 0.05}
 
-
 def test_assign_weight_thirdRow(list):
     assert assign_weight({}, 3, ["PC"], list, ["t1"]) == {"accept": 0.05, "reject": 0.40, "reply": 0.55}
     assert assign_weight({}, 3, ["PC"], list, ["t2"]) == {"accept": 0.20, "reject": 0.20, "reply": 0.60}
@@ -181,6 +179,7 @@ def test_assign_weight_thirdRow(list):
     assert assign_weight({}, 3, ["tie"], list, ["t3"]) == {"True": 0.95, "False": 0.05}
     assert assign_weight({}, 3, ["emi"], list, ["t1"]) == {"True": 0.05, "False": 0.95}  
 
+
 def test_answer_truco_IndexError(low):
     low.pop()
     assert len(low) == 2
@@ -195,6 +194,7 @@ def test_answer_truco_IndexError(low):
     with pytest.raises(IndexError, match="Wrong number of cars in hand"):
         answer_truco(3, "PC", [["accept"], ["reject"], ["reply"]], low)
 
+
 def test_add_envido_weight():
     with pytest.raises(ValueError, match="Weight sum is not 1"):
         add_envido_weight(["accept", "reject", "reply"], 0.30, 0.69)
@@ -207,6 +207,7 @@ def test_add_envido_weight():
     assert add_envido_weight(list, 0.15, 0.25, 0.60) == {"envido": 0.15, "real envido": 0.25, "falta envido": 0.60}
     list.pop(0)
     assert add_envido_weight(list, 0.70, 0.30) == {"real envido": 0.70, "falta envido": 0.30}
+
 
 def test_assign_envido_weight(list):
     assert assign_envido_weight(list, "q1", 0, 0) == {"accept": 0.10, "reject": 0.85, "reply":0.05}
@@ -222,7 +223,6 @@ def test_assign_envido_weight(list):
     assert assign_envido_weight(list, "q1", 0, 0) == {True: 0.15, False: 0.85} 
     assert assign_envido_weight(list, "q2", 0, 0) == {True: 0.35, False: 0.65}
 
-
 def test_assign_envido_reply_weight():
     list = ["envido", "real envido", "falta envido"]
     assert assign_envido_reply_weight(list, "q1", 0) == {"envido": 0.60, "real envido": 0.30, "falta envido": 0.10}
@@ -230,6 +230,7 @@ def test_assign_envido_reply_weight():
     list = ["real envido", "falta envido"]
     assert assign_envido_reply_weight(list, "q2", 1) == {"real envido": 0.60, "falta envido": 0.40}
     assert assign_envido_reply_weight(list, "q3", 1) == {"real envido": 0.50, "falta envido": 0.50}
+
 
 def test_reply_envido_faltaEnvido():
     assert reply_envido(["falta envido"], 25, 2) == "falta envido"

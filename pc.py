@@ -77,7 +77,7 @@ def reply_envido(opt_list, envido_points, envido_phase):
         return random.choices(opt_list,[weight[opt_list[0]], weight[opt_list[1]], weight[opt_list[2]]])
  
 
-def answer_truco(phase, phase_winner, opt_list, hand):
+def answer_truco(phase, phase_winner, opt_list, hand, envido_points=0):
     # Variables: Who is winning and which cards do I have?  
     # Check number of cards in hand are correct
     if (4 - phase) != len(hand):
@@ -86,6 +86,13 @@ def answer_truco(phase, phase_winner, opt_list, hand):
     # Flatten list of lists
     opt_list = list(chain(*opt_list))
  
+    # Case: Option to reply envido:
+    if len(opt_list) == 4:
+        if call_envido(envido_points):
+            return opt_list[0]
+        else:
+            opt_list.pop(0)
+    
     # Get tertiles ordered from lowest to highest
     hand = sort_hand(hand)
     cards = [card for card in assign_tertile(hand)]

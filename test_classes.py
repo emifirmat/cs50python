@@ -62,7 +62,6 @@ def test_Deck_len(deck):
     assert len(Deck(set_deck("test_files/test_cards_limit.csv"))) == 34
     assert len(deck) == 40
 
-
 def test_Deck_deal(deck):
     # Test 1st card
     card = deck.deal()
@@ -91,7 +90,6 @@ def test_Hand_add_cards(hand, cards):
     # Raise Error with one last card
     with pytest.raises(ValueError, match="Too many cards in hand!"):
         hand.add_card(cards[3])
-
 
 def test_Hand_pick_card(fullhand):
     picked = fullhand.pick_card("4", "sword")
@@ -136,6 +134,7 @@ def test_Points_envido_points():
     points.update_env_points(33) 
     assert points.envido_points == 33
 
+
 def test_Settings_attributes(set):
     # Test direct changes
     with pytest.raises(AttributeError):
@@ -157,14 +156,12 @@ def test_Settings_attributes(set):
         assert object == 1
     assert set.envido == False
 
-
 def test_Settings_set_falta_envido(set):
     set.set_falta_envido(30, 3)
     assert set.envido_chain[2]["falta envido"] == 27
     set.set_falta_envido(30, 30)
     assert set.envido_chain[2]["falta envido"] == 0
     set.set_falta_envido(30, 0) == 30
-
 
 def test_Settings_update_row_points(set):
     set.update_row_points(4, 2)

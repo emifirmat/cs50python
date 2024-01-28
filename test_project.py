@@ -41,6 +41,7 @@ def non_sleep():
     with patch("time.sleep", return_value=None) as time_mock:
         yield time_mock
 
+
 def test_set_menu():
     with(
         patch("builtins.input", side_effect=[" quit", "exit ", "Intro", " ScoRes "]) as mock
@@ -50,6 +51,7 @@ def test_set_menu():
         Menu(list).in_menu(mock)
         for result in ["quit", "quit", "intro", "scores"]:
             assert set_menu(list) == result
+
 
 def test_set_deck():
     # Test wrong name
@@ -101,6 +103,7 @@ def test_choose_dealer_SecondRow(p1, p2, set):
     assert p2.first == False
     assert p2.dealer == True
     assert choose_dealer(p1, p2, set) == (p2, p1) 
+
 
 def test_play_card(p1, set):
     with (
@@ -167,12 +170,14 @@ def test_truco_partial_replies(p1, p2, set):
         assert set.truco_phase == 1
         assert set.truco_score == 2
 
+
 def test_search_type(p1, p2):
     assert search_type(p1) == "sword"
     assert search_type(p2) == None
     # two cards in hand
     p1.pick_card("4", "sword")
     assert search_type(p1) == "sword"
+
 
 def test_get_envido_points(p1, p2):
     with patch("project.search_type", side_effect=["sword", None, "sword", None]):  
@@ -184,21 +189,25 @@ def test_get_envido_points(p1, p2):
         assert get_envido_points(p1) == 29
         assert get_envido_points(p2) == 7
 
-@patch("project.get_envido_points", side_effect=[30, 20, 0])
-def test_play_envido(mock, p1, p2):
-    # Caller wins
-    p2.update_env_points(26)
-    assert play_envido(p1, p2) == (p1, p2)
-    
-    # Caller loses
-    [p.restart_env_points() for p in [p1, p2]]
-    p2.update_env_points(29)
-    assert play_envido(p1, p2) == (p2, p1)
-    
-    # Tie (caller loses)
-    [p.restart_env_points() for p in [p1, p2]]
-    p2.update_env_points(0)
-    assert play_envido(p1, p2) == (p2, p1)
+
+def test_play_envido(p1, p2):
+        # Caller wins
+        p1.update_env_points(30)
+        p2.update_env_points(26)
+        assert play_envido(p1, p2) == (p1, p2)
+        
+        # Caller loses
+        [p.restart_env_points() for p in [p1, p2]]
+        p1.update_env_points(20)
+        p2.update_env_points(29)
+        assert play_envido(p1, p2) == (p2, p1)
+        
+        # Tie (caller loses)
+        [p.restart_env_points() for p in [p1, p2]]
+        p1.update_env_points(0)
+        p2.update_env_points(0)
+        assert play_envido(p1, p2) == (p2, p1)
+
 
 def test_envido_accept(p1, p2, set):
     with (
@@ -248,6 +257,7 @@ def test_envido_call(p1, p2, set):
         assert envido(p2, p1, set, "envido") == (p1, p2)
         assert set.envido_score == 7
 
+
 def test_end_phase(p1, p2, set):
     # Fase 1: p1 played 12 coin, p2 10 club. P1 won
     p1.plays_first()
@@ -273,6 +283,7 @@ def test_end_phase(p1, p2, set):
     assert set.phase_winner == [p1.name, p2.name, "tie"]
     assert p2.first == True # Note, p2 is still PC in test
     assert p1.first == False
+
 
 def test_end_row_ties(p1, p2, set):
     # p1 won ph1, tie ph2
@@ -346,6 +357,7 @@ def test_end_row_noties(p1, p2, set):
     p2.add_phase_point()
     assert end_row(p1, p2, set) == (p2, True)
 
+
 def test_score_winner(p1, p2, set):
     # P1 won the game
     set.envido_score = 30
@@ -371,20 +383,21 @@ def test_score_nowinner(p1, p2, set):
     assert p1.game_score == 3
     assert p2.game_score == 2
 
-@patch("builtins.input")
-def test_exit_game_quit(mock):
-    mock.side_effect=["yEs"," y ","yes", "YES"]
-    for _ in mock:
-        with pytest.raises(SystemExit, match="--Thank you for playing truco, see you!"):
-            exit_game()
-    mock.side_effect=["no", " nO", "NO ", "n", "N"]
-    for _ in mock:
-        assert exit_game() == None
-    # Test while loop
-    mock.side_effect=["y3s", "yessss", "whatever", " n0 ", "nope"]
-    for _ in mock:
-        with pytest.raises(StopIteration):
-            exit_game()     
+
+def test_exit_game_quit():
+    with patch("builtins.input") as mock:
+        mock.side_effect=["yEs"," y ","yes", "YES"]
+        for _ in mock:
+            with pytest.raises(SystemExit, match="--Thank you for playing truco, see you!"):
+                exit_game()
+        mock.side_effect=["no", " nO", "NO ", "n", "N"]
+        for _ in mock:
+            assert exit_game() == None
+        # Test while loop
+        mock.side_effect=["y3s", "yessss", "whatever", " n0 ", "nope"]
+        for _ in mock:
+            with pytest.raises(StopIteration):
+                exit_game()     
 
 def test_exit_game_winner():
     with pytest.raises(SystemExit, match="--Thank you for playing truco, see you!"):
