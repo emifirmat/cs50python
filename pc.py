@@ -9,7 +9,8 @@ def main():
         {"number": "12", "type":"sword", "truco": "7", "envido": "0"},
     ]
     opt_list = [["accept"], ["reject"], ["reply"]]
-    answer_truco(1, ["PC"], opt_list, hand)
+    for _ in range(100):
+        print(call(3, 20, 1, [""], hand))
     
     
 def call(opt_size, envido_points, game_phase, phase_winner, hand):
@@ -29,15 +30,17 @@ def call(opt_size, envido_points, game_phase, phase_winner, hand):
 
 def call_truco(game_phase, phase_winner, hand):
     answer = answer_truco(game_phase, phase_winner, [["True"], ["False"]], hand)
-    return bool(answer)
+    return check_bool(answer)
 
 
 def call_envido(envido_points):
     quartile = assign_quartile(envido_points)
     opt_list = ["True", "False"]
+    # Envido phase and score are always 0
     weight = assign_envido_weight(opt_list, quartile, 0, 0)
     answer = random.choices(opt_list, [weight[opt_list[0]], weight[opt_list[1]]])
-    return bool(answer[0])
+    return check_bool(answer[0])
+
 
 
 def select_envido(opt_list, envido_points):
@@ -403,6 +406,15 @@ def pick_lowest_card(hand):
 
 def pick_random_card(hand):
     return random.choice(hand)
+
+
+def check_bool(str):
+    if str not in ["False", "True"]:
+        raise ValueError("String should be False or True")
+    if str == "False":
+        return False
+    else:
+        return True
 
 
 if __name__ == "__main__":

@@ -83,7 +83,7 @@ def main():
                             if p2.first == True:
                                 p2, p1 = p1, p2
                         f_text = [colored('First', 'blue'), colored('second', 'blue')]    
-                        print(f"{f_text[0]} to play is {p1} and {f_text[1]} to play is {p2}\n")
+                        print(f"{f_text[0]} to play is {p1} and {f_text[1]} to play is {p2}.\n")
                         sleep(2)
                         
                         print(f"{p1} = {p1:hand}, {p2} = {p2:hand}\n") 
@@ -107,9 +107,9 @@ def main():
                         if settings.phase > 1:
                             winner = end_row(p1, p2, settings)
                             if winner:
-                                print(f"<< {winner} wins this row >>\n")
+                                print(f"<< {winner[0]} wins this row >>\n")
                                 break
-    
+      
 # Rules
 def rules():   
     while True:
@@ -218,7 +218,6 @@ def turn(px, py, settings, p1card=None):
                     # Play card after truco
                     return play_card(px, settings, p1card)
                 else:
-                    score(px, py, settings)
                     return False # End row
             case "play":
                 return play_card(px, settings, p1card)
@@ -397,6 +396,8 @@ def truco(px, py, settings):
             for value in chain[phase].values():
                 settings.truco_score = value - 1
             print(f"<< {px} wins this row >>\n")
+            # Add score here to contemplate reply rejection
+            score(px, py, settings)
             return False
         case "reply":
             settings.new_truco_phase()
@@ -457,36 +458,36 @@ def end_row(p1, p2, settings):
     if settings.phase_winner[0] != "tie":
         if p1.phase_point == 2:
             score(p1, p2, settings)
-            return p1
+            return (p1, True)
         elif p2.phase_point == 2:
             score(p2, p1, settings)
-            return p2
+            return (p2, True)
         # None won 2 phases
         elif settings.phase == 2 and settings.phase_winner[1] != "tie":
             return False
         # There was a tie in third row, first phase winner wins
         else:
             if p1.name == settings.phase_winner[0]:
-                return p1
+                return (p1, True)
             else:
-                return p2
+                return (p2, True)
     # Tie in first row
     else:
         # p1 wins another phase
         if p1.name in settings.phase_winner: 
             score(p1, p2, settings)
-            return p1
+            return (p1, True)
         # p2 wins another phase
         elif p2.name in settings.phase_winner: 
             score(p2, p1, settings)
-            return p2
+            return (p2, True)
         # 2 Ties move to phase 3
         elif settings.phase == 2: 
             return False
         else:
             # Triple tie, p1 wins
             score(p1, p2, settings) 
-            return p1  
+            return (p1, True)  
 
 
 def score(px, py, settings, phase=None):
