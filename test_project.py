@@ -42,6 +42,15 @@ def non_sleep():
         yield time_mock
 
 
+def test_set_gscore():
+    with patch("builtins.input", side_effect=["16", "0", "ab", "fifteen"]):
+        with pytest.raises(StopIteration):
+            set_gscore()
+    with patch("builtins.input", side_effect=[" 15", " 30   "]):
+            assert set_gscore() == 15
+            assert set_gscore() == 30
+
+
 def test_set_menu():
     with(
         patch("builtins.input", side_effect=[" quit", "exit ", "Intro", " ScoRes "]) as mock
@@ -170,6 +179,32 @@ def test_truco_partial_replies(p1, p2, set):
         assert set.truco_phase == 1
         assert set.truco_score == 2
 
+def test_truco_envido(p1, p2, set):
+    with (
+        # p1 calls truco, p2 calls envido, p1 reject envido, p2 reject truco
+        patch("pc.answer_truco", side_effect=["envido", "reject"]),
+        patch("project.choose_envido", return_value="envido"),
+        patch("project.set_menu", return_value="reject"),
+    ):
+        assert truco(p1, p2, set) == False
+        assert set.truco_phase == 0
+        assert set.truco_score == 1
+        assert set.envido_score == 1
+    
+    set.restart_values()
+    with (
+        # p2 calls truco, p1 calls real envido, p2 accept envido, p1 accept truco
+        patch("project.set_menu", side_effect=["envido", "accept"]),
+        patch("pc.answer_envido", return_value="accept"),
+        patch("project.choose_envido", return_value="real envido"),
+    ):
+        assert truco(p2, p1, set) == True
+        assert set.envido == False
+        assert set.truco_phase == 1
+        assert set.truco_score == 2
+        assert p2.truco_call == False
+        assert p1.truco_call == True
+        assert set.envido_score == 3
 
 def test_search_type(p1, p2):
     assert search_type(p1) == "sword"

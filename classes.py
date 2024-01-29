@@ -205,6 +205,12 @@ class Player(Points, Hand):
                 return f"[{'] ['.join(values)}]"
             else:
                 return f"None cards"
+        elif format_spec == "gscore":
+            if self.name == "PC":
+                return f"{colored(self.game_score, 'red')}"
+            else:
+                return f"{colored(self.game_score, 'green')}"
+
         else:
             return self.__str__()
   

@@ -24,6 +24,7 @@ def main():
         choise = set_menu([
             ["start", "Start game"],
             ["rules", "Learn how to play"],
+            ["settings", "Change settings"],
             ["quit", "Exit game"],
         ])
 
@@ -31,6 +32,10 @@ def main():
         match choise:
             case "rules":
                 rules()
+            case "settings":
+                global goal_scre
+                goal_scre = set_gscore()
+                time.sleep(1)
             case "quit":
                 exit_game()
             case "start":
@@ -53,8 +58,7 @@ def main():
                     
                     # Start row
                     settings.new_row()
-                    f_text = colored('row ' + str(settings.row), attrs=['bold'])
-                    print(f"-----Starting {f_text}-----\n")
+                    cprint(f"-----Starting row {settings.row}-----\n", "blue", attrs=["bold"])
                     time.sleep(1)
 
                     # Shuffling
@@ -75,7 +79,7 @@ def main():
                         for p in [p1, p2]:
                             p.temp_hand = p.hand[:]
                         f_text = colored('phase ' + str(settings.phase), attrs=['bold'])
-                        print(f"Starting {f_text}...\n")
+                        print(f".....Starting {f_text}.....\n")
 
                         # Set phase 2 - 3 
                         if settings.phase > 1:
@@ -88,7 +92,10 @@ def main():
                         print(f"{f_text[0]} to play is {p1} and {f_text[1]} to play is {p2}.\n")
                         time.sleep(2)
                         
-                        print(f"{p1} = {p1:hand}, {p2} = {p2:hand}\n") 
+                        if p1.name == "PC":
+                            show_hand(p2)
+                        else:
+                            show_hand(p1)
                         time.sleep (2)
 
                         # Playing turns - First variable in turn() is current player's turn
@@ -112,7 +119,7 @@ def main():
                                 print(f"<< {winner[0]} wins this row >>\n")
                                 break
       
-# Rules
+
 def rules():   
     while True:
         # Intro rules
@@ -163,6 +170,15 @@ def introduction():
     time.sleep(2)    
 
 
+def set_gscore():
+    while True:
+        score = input("Set goal score to <15> or <30>:\n>> ").strip()
+        if score == "15" or score == "30":
+            f_text = colored(score, 'light_green', attrs=['bold'])
+            print(f"Game now is up to {f_text} points.\n")
+            return int(score)
+
+
 def exit_game(msg=None):
     if msg == None:
         print("\nExit game? (Yes/No)")
@@ -173,7 +189,7 @@ def exit_game(msg=None):
                 break
     # End game
     if msg == "winner" or (match := re.search(r"(^y(es)?$)", answer)):
-        exit("--Thank you for playing truco, see you!")
+        exit("----Thank you for playing truco, see you!----")
     # Go back
     return
 
@@ -200,6 +216,7 @@ def turn(px, py, settings, p1card=None):
         if px.name == "PC":   
             option = pc.call(len(menu), px.envido_points, settings.phase, settings.phase_winner, px.hand)
         else:
+            menu.extend([["hand", "Show hand"], ["score", "Show scores"], ["quit", "Quit game"]]) 
             option = set_menu(menu)
         # Execute option
         match option:
@@ -215,6 +232,26 @@ def turn(px, py, settings, p1card=None):
                     return False # End row
             case "play":
                 return play_card(px, settings, p1card)
+            case "hand":
+                show_hand(px)
+                time.sleep(2)
+            case "score":
+                show_score(px, py, settings)
+                time.sleep(2)
+            case "quit":
+                exit_game()
+
+
+def show_hand(px):
+    f_text= f"{colored('Hand', 'green')} ="
+    print(f"{f_text} {px:hand}\n") 
+
+
+def show_score(px, py, settings):
+    print(f"{px} TOTAL POINTS --> {px:gscore}")
+    print(f"{py} TOTAL POINTS --> {py:gscore}")
+    print(f"CURRENT ROW SCORE POINTS --> {settings.row_points}")
+    print(f"GOAL --> {goal_scre} POINTS\n")
 
 
 def envido(px, py, settings, call):  
@@ -290,16 +327,12 @@ def choose_envido(px, settings):
 
 def play_envido(caller, replier):   
     """ Replier is first to play """ 
-    # See hand and say points
-    print(f"{replier:hand}\n") 
+    # Say points
     f_text = colored(str(replier.envido_points) + ' points!', attrs=['bold'])
     print(f"{replier}: I have {f_text}\n")
     time.sleep(2)
 
     """ Caller answers """
-    # See hand and say points
-    print(f"{caller:hand}\n")
-
     # Replier wins (tie included)
     if caller.envido_points <= replier.envido_points:
         print(f"{caller}: Son buenas!\n")
@@ -427,7 +460,6 @@ def play_card(px, settings, p1card=None):
     px.hand.remove(card)                    
     f_text = colored(str(card['number']) + ' ' + str(card['type']), 'blue', attrs=['bold'])
     print(f"\n** {px} plays {f_text} **\n")       
-    print(f"{px:hand} left\n")
     return int(card['truco'])
 
 
@@ -451,7 +483,7 @@ def end_phase(p1card, p2card, p1, p2, settings):
     else:
         settings.phase_winner.append("tie")
         msg = f"There is a"
-    print(f"{msg} {settings:phasew}\n")
+    print(f"{msg} {settings:phasew}")
     print(f"Current phase points: {p1} {p1.phase_point} {p2} {p2.phase_point}\n")
     time.sleep(1)
 
@@ -475,8 +507,10 @@ def end_row(p1, p2, settings):
         # There was a tie in third row, first phase winner wins
         else:
             if p1.name == settings.phase_winner[0]:
+                score(p1, p2, settings)
                 return (p1, True)
             else:
+                score(p2, p1, settings)
                 return (p2, True)
     # Tie in first row
     else:
@@ -506,9 +540,7 @@ def score(px, py, settings, phase=None):
 
     # Print score points
     settings.update_row_points(settings.envido_score, settings.truco_score)
-    print(f"{px} TOTAL POINTS --> {px.game_score}")
-    print(f"{py} TOTAL POINTS --> {py.game_score}")
-    print(f"CURRENT ROW SCORE POINTS --> {settings.row_points}\n")
+    show_score(px, py, settings)
 
     # Compare with total score
     if px.game_score >= goal_scre:
@@ -549,14 +581,11 @@ def choose_dealer(p1, p2, settings):
     if settings.row == 1: 
         dealer = random.choice([p1, p2])
         dealer.change_dealer()
-        
-        # Set first to play = p1
-        if p1.dealer == True:
-            p1, p2 = p2, p1
     else:
+        [p.change_dealer() for p in [p1, p2]]
+    # As p1 and p2 change during phases, I have to check every row
+    if p1.dealer == True:
         p1, p2 = p2, p1
-        for p in [p1, p2]:
-            p.change_dealer()
     p1.plays_first()
     return p1, p2
 
