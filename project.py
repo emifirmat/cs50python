@@ -20,7 +20,7 @@ def main():
     game = "Truco card game"
     name = introduction(game)
 
-    # Menu options: Start game, Rules, exit
+    # Menu options: Start game, rules, settings, exit.
     while True:
         choise = set_menu(
             [
@@ -30,8 +30,6 @@ def main():
                 ["quit", "Exit game"],
             ]
         )
-
-        # Move to options
         match choise:
             case "rules":
                 rules()
@@ -58,9 +56,9 @@ def main():
                 """ Start Row """
                 while True:
                     # Clean hands and values from previous rows
-                    for cls in [p1, p2, settings]:
-                        cls.restart_values()
-
+                    if settings.row > 0:
+                        for cls in [p1, p2, settings]:
+                            cls.restart_values()
                     # Start row
                     settings.new_row()
                     cprint(
@@ -88,16 +86,16 @@ def main():
                     """Start phase"""
                     for _ in range(TOTAL_PHASES):
                         settings.new_phase()
-                        # Copy temp hand for envido and truco situations
-                        for p in [p1, p2]:
-                            p.temp_hand = p.hand[:]
                         f_text = colored("phase " + str(settings.phase), attrs=["bold"])
                         print(f".....Starting {f_text}.....\n")
 
+                        # Copy temp hand for envido and truco situations
+                        for p in [p1, p2]:
+                            p.temp_hand = p.hand[:]
                         # Set phase 2 - 3
                         if settings.phase > 1:
+                            # If neither truco or envido were called in ph1
                             settings.lock_envido()
-
                             # If p2 won, is first to play
                             if p2.first == True:
                                 p2, p1 = p1, p2
@@ -106,11 +104,10 @@ def main():
                             f"{f_text[0]} to play is {p1} and {f_text[1]} to play is {p2}.\n"
                         )
                         time.sleep(2)
-
                         if p1.name == "PC":
-                            show_hand(p2)
+                            print(f"{p2:s_hand}")
                         else:
-                            show_hand(p1)
+                            print(f"{p1:s_hand}")
                         time.sleep(2)
 
                         # Playing turns - First variable in turn() is current player's turn
@@ -135,9 +132,45 @@ def main():
                                 break
 
 
+""" Primary functions"""
+
+
+def set_menu(list, call=None):
+    menu = Menu(list)
+    if call == "envido":
+        print(f"{' | '.join(list)}\n")
+    else:
+        print(f"{tabulate(list, headers=['Command', 'Description'])}\n")
+    # Check user answer
+    while True:
+        choise = input("Command: ").strip().lower().replace("exit", "quit")
+        if menu.in_menu(choise):
+            return choise
+
+
+def introduction(game):
+    # Welcome msg
+    cprint(f.renderText(game), "light_blue")
+    time.sleep(1)
+
+    # Ask name and limit length up to 20 chars
+    while True:
+        name = input("-- What's your name?\n>> ").strip()
+        if len(name) > 0:
+            name = name[0:21]
+            break
+    time.sleep(1)
+
+    # Say hello
+    print(
+        f"\n-- Welcome {name}! Read the menu in order to start your game:", end="\n\n"
+    )
+    time.sleep(2)
+    return name
+
+
 def rules():
     while True:
-        # Intro rules
         print("--To learn how to play, choose a command from the menu\n")
 
         # Rules menu
@@ -160,44 +193,24 @@ def rules():
                 print(f"{file.read()}\n")
         except FileNotFoundError:
             print("Sorry, missing information, try another option")
+        time.sleep(1)
 
         # Ask to continue or leave rules
-        time.sleep(1)
         nchoise = input(
-            "Enter <any letter> to continue navigating or <quit> to go back to main menu.\n\n>> "
+            "Enter <any letter> to continue navigating or <quit> to go back to main menu.\n>> "
         )
         if nchoise == "quit":
             break
-    # Go back to main menu
-    print()
+        print()
     return
-
-
-def introduction(game):
-    # Welcome
-    cprint(f.renderText("Truco card game"), "light_blue")
-    time.sleep(1)
-
-    # Ask name and limit length up to 20 chars
-    while True:
-        name = input("-- What's your name?\n>> ").strip()
-        if len(name) > 0:
-            name = name[0:21]
-            break
-    print()
-    time.sleep(1)
-
-    # Say hello
-    print(f"-- Welcome {name}! Read the menu in order to start your game:", end="\n\n")
-    time.sleep(2)
-
-    return name
 
 
 def set_gscore():
     while True:
+        # Prompt 15 or 30
         score = input("Set goal score to <15> or <30>:\n>> ").strip()
         if score == "15" or score == "30":
+            # Print confirmation msg
             f_text = colored(score, "light_green", attrs=["bold"])
             print(f"Game now is up to {f_text} points.\n")
             return int(score)
@@ -205,8 +218,8 @@ def set_gscore():
 
 def exit_game(msg=None):
     if msg == None:
+        # Ask confirmation to quit
         print("\nExit game? (Yes/No)")
-        # Reprompt until receive a proper answer
         while True:
             answer = input(">> ").lower().strip()
             if match := re.search(r"(^y(es)?$)|(^no?$)", answer):
@@ -214,8 +227,57 @@ def exit_game(msg=None):
     # End game
     if msg == "winner" or (match := re.search(r"(^y(es)?$)", answer)):
         exit("----Thank you for playing truco, see you!----")
-    # Go back
+    # Go back to menu
     return
+
+
+def set_deck(filerute):
+    try:
+        with open(filerute) as file:
+            csv_file = csv.DictReader(file)
+            cards_list = [row for row in csv_file]
+    except FileNotFoundError:
+        exit("Can't open cards values file")
+    return cards_list
+
+
+def choose_dealer(p1, p2, settings):
+    # Row 1, pick random dealer
+    if settings.row == 1:
+        dealer = random.choice([p1, p2])
+        dealer.change_dealer()
+    # Dealer changes every row
+    else:
+        [p.change_dealer() for p in [p1, p2]]
+    # As p1 and p2 change during phases, I have to check every row
+    if p1.dealer == True:
+        p1, p2 = p2, p1
+    p1.plays_first()
+    return p1, p2
+
+
+def get_envido_points(p):
+    points = 0
+    # Set filter if there are 2 cards of the same type
+    type_filter = search_type(p)
+    if type_filter is not None:
+        # Get and sort cards of the filter type
+        env_cards = list(filter(lambda card: card["type"] == type_filter, p.temp_hand))
+        env_cards = sorted(env_cards, key=lambda x: x["envido"], reverse=True)
+        # If there are 3 cards of the same type, remove the one with less value
+        if len(env_cards) == 3:
+            env_cards.pop()
+        # Add points for having 2 of the same type cards
+        points = 20
+    else:
+        # Leave only the card with the highest points
+        env_cards = list(sorted(p.temp_hand, key=lambda x: x["envido"], reverse=True))
+        while len(env_cards) != 1:
+            env_cards.pop()
+    # Add points
+    for card in env_cards:
+        points += int(card["envido"])
+    return points
 
 
 def turn(px, py, settings, p1card=None):
@@ -236,7 +298,7 @@ def turn(px, py, settings, p1card=None):
             menu = menu[1:]
         else:
             pass
-        # Pc or player calls
+        # PC or player calls
         if px.name == "PC":
             option = pc.call(
                 len(menu),
@@ -250,7 +312,6 @@ def turn(px, py, settings, p1card=None):
                 [["hand", "Show hand"], ["score", "Show scores"], ["quit", "Quit game"]]
             )
             option = set_menu(menu)
-        # Execute option
         match option:
             case "envido":
                 choice = choose_envido(px, settings)
@@ -261,11 +322,12 @@ def turn(px, py, settings, p1card=None):
                     # Play card after truco
                     return play_card(px, settings, p1card)
                 else:
-                    return False  # End row
+                    # End row
+                    return False
             case "play":
                 return play_card(px, settings, p1card)
             case "hand":
-                show_hand(px)
+                print(f"{px:s_hand}")
                 time.sleep(2)
             case "score":
                 show_score(px, py, settings)
@@ -274,16 +336,34 @@ def turn(px, py, settings, p1card=None):
                 exit_game()
 
 
-def show_hand(px):
-    f_text = f"{colored('Hand', 'green')} ="
-    print(f"{f_text} {px:hand}\n")
+""" Secondary functions"""
 
 
-def show_score(px, py, settings):
-    print(f"{px} TOTAL POINTS --> {px:gscore}")
-    print(f"{py} TOTAL POINTS --> {py:gscore}")
-    print(f"CURRENT ROW SCORE POINTS --> {settings.row_points}")
-    print(f"GOAL --> {goal_scre} POINTS\n")
+def search_type(p):
+    for n in range(TOTAL_CARDS):
+        for j in range(n + 1, TOTAL_CARDS):
+            if p.temp_hand[n]["type"] == p.temp_hand[j]["type"]:
+                return p.temp_hand[n]["type"]
+    return
+
+
+def set_truco_call(settings):
+    try:
+        for string in settings.truco_chain[settings.truco_phase].keys():
+            trucostr = string
+    except IndexError:
+        trucostr = "vale cuatro"
+    return trucostr
+
+
+def choose_envido(px, settings):
+    """Used only for envido call (not answer)"""
+    settings.lock_envido()
+    envido_list = ["envido", "real envido", "falta envido"]
+    if px.name == "PC":
+        return pc.select_envido(envido_list, px.envido_points)
+    else:
+        return set_menu(envido_list, "envido")
 
 
 def envido(px, py, settings, call):
@@ -298,16 +378,17 @@ def envido(px, py, settings, call):
     print(f"{px} says -{colored(call.upper() + '!', 'blue', attrs=['bold'])}-\n")
     time.sleep(1)
 
-    """ py answers """
-    # Prompt envido options and eliminate reply option when "falta envido" is called
+    """ Py answers """
     print(f"{py} answers:")
     opt_list = [
         ["accept"],
         ["reject"],
         ["reply"],
     ]
+    # Eliminate reply option when "falta envido" is called.
     if phase > 1:
         opt_list.pop()
+    # PC or player answers
     if py.name == "PC":
         answer = pc.answer_envido(
             opt_list, py.envido_points, settings.envido_score, phase
@@ -315,28 +396,28 @@ def envido(px, py, settings, call):
         print(f">> {answer.title()}\n")
     else:
         answer = set_menu(opt_list)
-
     match answer:
         case "accept":
             winner, loser = play_envido(px, py)
-
-            # Update score / falta envido vs others
+            # Update score: falta envido vs others.
             if phase == 2:
                 settings.set_falta_envido(goal_scre, loser.game_score)
-                if chain[phase]["falta envido"] > settings.envido_score:
-                    settings.envido_score = chain[phase]["falta envido"]
+                # There are NOT accumulative score points.
+                settings.envido_score = chain[phase]["falta envido"]
             else:
+                # Up to real envido, score is accumulative.
                 for value in chain[phase].values():
                     settings.envido_score += value
             time.sleep(3)
             return winner, loser
         case "reject":
             time.sleep(1)
+            # First envido rejected
             if settings.envido_score == 0:
                 settings.envido_score = 1
             return px, py
         case "reply":
-            # Update points
+            # Update score
             for value in chain[phase].values():
                 settings.envido_score += value
             # Enable another envido if it was called once
@@ -344,7 +425,7 @@ def envido(px, py, settings, call):
                 phase = 0
             else:
                 phase += 1
-            # Order new menu and get answer
+            # Set new menu and get answer
             replies = [key for row in chain[phase:] for key in row.keys()]
             if py.name == "PC":
                 reply = pc.reply_envido(replies, py.envido_points, phase)
@@ -353,73 +434,9 @@ def envido(px, py, settings, call):
             return envido(py, px, settings, reply)
 
 
-def choose_envido(px, settings):
-    settings.lock_envido()
-    envido_list = ["envido", "real envido", "falta envido"]
-    if px.name == "PC":
-        return pc.select_envido(envido_list, px.envido_points)
-    else:
-        return set_menu(envido_list, "envido")
-
-
-def play_envido(caller, replier):
-    """Replier is first to play"""
-    # Say points
-    f_text = colored(str(replier.envido_points) + " points!", attrs=["bold"])
-    print(f"{replier}: I have {f_text}\n")
-    time.sleep(2)
-
-    """ Caller answers """
-    # Replier wins (tie included)
-    if caller.envido_points <= replier.envido_points:
-        print(f"{caller}: Son buenas!\n")
-        return replier, caller
-    # Caller wins
-    else:
-        f_text = colored(str(caller.envido_points) + " points!", attrs=["bold"])
-        print(f"{caller}: And I have {f_text} I win!\n")
-        return caller, replier
-
-
-def get_envido_points(p):
-    points = 0
-
-    # Set filter if there are 2 cards of the same type
-    type_filter = search_type(p)
-
-    if type_filter is not None:
-        # Get and sort cards of the filter type
-        env_cards = list(filter(lambda card: card["type"] == type_filter, p.temp_hand))
-        env_cards = sorted(env_cards, key=lambda x: x["envido"], reverse=True)
-
-        # If there are 3 cards of the same type, remove the one with less value
-        if len(env_cards) == 3:
-            env_cards.pop()
-        # Add points for having 2 of the same type cards
-        points = 20
-    else:
-        # Leave only the card with the highest points
-        env_cards = list(sorted(p.temp_hand, key=lambda x: x["envido"], reverse=True))
-        while len(env_cards) != 1:
-            env_cards.pop()
-    # Add points
-    for card in env_cards:
-        points += int(card["envido"])
-    return points
-
-
-def search_type(p):
-    for n in range(TOTAL_CARDS):
-        for j in range(n + 1, TOTAL_CARDS):
-            if p.temp_hand[n]["type"] == p.temp_hand[j]["type"]:
-                return p.temp_hand[n]["type"]
-    return
-
-
 def truco(px, py, settings):
     phase = settings.truco_phase
     chain = settings.truco_chain
-
     for key in chain[phase]:
         print(f"{px} says -{colored(key.upper() + '!', 'blue', attrs=['bold'])}-\n")
     time.sleep(1)
@@ -429,7 +446,7 @@ def truco(px, py, settings):
         ["reject"],
         ["reply"],
     ]
-    # Let second player call envido if they haven't played yet
+    # Let py call envido if they haven't played yet.
     if (
         px.first == True
         and settings.phase == 1
@@ -437,14 +454,13 @@ def truco(px, py, settings):
         and phase == 0
     ):
         opt_list.insert(0, ["envido"])
-
-    # Eliminate reply if vale is called
+    # Eliminate reply if vale 4 was called
     if phase > 1:
         opt_list.pop()
 
     """ py answers"""
     print(f"{py} answers:")
-    # PC answers
+    # PC or user answers
     if py.name == "PC":
         answer = pc.answer_truco(
             settings.phase,
@@ -455,8 +471,7 @@ def truco(px, py, settings):
         )
         print(f">> {answer.title()}\n")
     else:
-        # User answers
-        answer = set_menu(opt_list, "horizontal")
+        answer = set_menu(opt_list)
     match answer:
         case "envido":
             # Py called envido
@@ -465,12 +480,12 @@ def truco(px, py, settings):
             score(winner, loser, settings, "envido")
             # Retake truco
             return truco(px, py, settings)
-
         case "accept":
             # Vale 4 vs other truco calls
             if phase == 2:
                 py.lock_truco()
             else:
+                # Let replier call next truco phase
                 py.unlock_truco()
                 settings.new_truco_phase()
             # Caller can't call twice in a row, envido can't be called after truco
@@ -484,11 +499,10 @@ def truco(px, py, settings):
             for value in chain[phase].values():
                 settings.truco_score = value - 1
             print(f"<< {px} wins this row >>\n")
-            # Add score here to contemplate reply rejection
+            # Add score here to contemplate reply chain rejection
             score(px, py, settings)
             return False
         case "reply":
-            # If retruco was called, envido can't be called.
             settings.new_truco_phase()
             return truco(py, px, settings)
 
@@ -516,15 +530,20 @@ def play_card(px, settings, p1card=None):
     return int(card["truco"])
 
 
+def show_score(px, py, settings):
+    for p in [px, py]:
+        print(f"{p} TOTAL POINTS --> {p:gscore}")
+    print(f"CURRENT ROW SCORE POINTS --> {settings.row_points}")
+    print(f"GOAL --> {goal_scre} POINTS\n")
+
+
 def end_phase(p1card, p2card, p1, p2, settings):
-    # Compare cards
     msg = f"The winner of {colored('phase ' + str(settings), attrs=['bold'])} is"
 
     # P1 wins
     if p1card > p2card:
         p1.add_phase_point()
         settings.phase_winner.append(p1.name)
-
     # P2 wins
     elif p1card < p2card:
         p2.add_phase_point()
@@ -545,7 +564,6 @@ def end_row(p1, p2, settings):
     # Truco was not called in whole row
     if settings.truco_score == 0:
         settings.truco_score = 1
-
     # No ties in game
     if settings.phase_winner[0] != "tie":
         if p1.phase_point == 2:
@@ -584,13 +602,34 @@ def end_row(p1, p2, settings):
             return (p1, True)
 
 
+""" Other functions"""
+
+
+def play_envido(caller, replier):
+    """Replier is first to play"""
+    # Say points
+    f_text = colored(str(replier.envido_points) + " points!", attrs=["bold"])
+    print(f"{replier}: I have {f_text}\n")
+    time.sleep(2)
+
+    """ Caller answers """
+    # Replier wins (tie included)
+    if caller.envido_points <= replier.envido_points:
+        print(f"{caller}: Son buenas!\n")
+        return replier, caller
+    # Caller wins
+    else:
+        f_text = colored(str(caller.envido_points) + " points!", attrs=["bold"])
+        print(f"{caller}: And I have {f_text} I win!\n")
+        return caller, replier
+
+
 def score(px, py, settings, phase=None):
     # Sum row score to player score
     if phase == "envido":
         px.update_game_score(settings.envido_score)
     else:
         px.update_game_score(settings.truco_score)
-
     # Print score points
     settings.update_row_points(settings.envido_score, settings.truco_score)
     show_score(px, py, settings)
@@ -609,52 +648,6 @@ def score(px, py, settings, phase=None):
         exit_game("winner")
     else:
         return
-
-
-def set_menu(list, call=None):
-    menu = Menu(list)
-    if call == "envido":
-        print(f"{' | '.join(list)}\n")
-    else:
-        print(f"{tabulate(list, headers=['Command', 'Description'])}\n")
-
-    # Check user answer
-    while True:
-        choise = input("Command: ").strip().lower().replace("exit", "quit")
-        if menu.in_menu(choise):
-            return choise
-
-
-def set_deck(filerute):
-    try:
-        with open(filerute) as file:
-            csv_file = csv.DictReader(file)
-            cards_list = [row for row in csv_file]
-    except FileNotFoundError:
-        exit("Can't open cards values file")
-    return cards_list
-
-
-def choose_dealer(p1, p2, settings):
-    if settings.row == 1:
-        dealer = random.choice([p1, p2])
-        dealer.change_dealer()
-    else:
-        [p.change_dealer() for p in [p1, p2]]
-    # As p1 and p2 change during phases, I have to check every row
-    if p1.dealer == True:
-        p1, p2 = p2, p1
-    p1.plays_first()
-    return p1, p2
-
-
-def set_truco_call(settings):
-    try:
-        for string in settings.truco_chain[settings.truco_phase].keys():
-            trucostr = string
-    except IndexError:
-        trucostr = "vale cuatro"
-    return trucostr
 
 
 if __name__ == "__main__":

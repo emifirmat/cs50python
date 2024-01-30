@@ -1,0 +1,12 @@
+pyfiglet
+tabulate
+time
+termcolor
+sys
+random
+csv
+re
+itertools
+pytest
+unittest.mock
+

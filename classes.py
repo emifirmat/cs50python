@@ -136,6 +136,13 @@ class Hand:
         # Card not found
         raise TypeError
 
+    def cards(self):
+        values = [f"{card['number']} {card['type']}" for card in self.hand]
+        if len(values) > 0:
+            return f"[{'] ['.join(values)}]"
+        else:
+            return f"None cards"
+
     def clean_hand(self):
         self.hand = []
         self.temp_hand = []
@@ -202,11 +209,10 @@ class Player(Points, Hand):
 
     def __format__(self, format_spec):
         if format_spec == "hand":
-            values = [f"{card['number']} {card['type']}" for card in self.hand]
-            if len(values) > 0:
-                return f"[{'] ['.join(values)}]"
-            else:
-                return f"None cards"
+            return self.cards()
+        elif format_spec == "s_hand":
+            f_text = f"{colored('Hand', 'green')} ="
+            return f"{f_text} {self.cards()}\n"
         elif format_spec == "gscore":
             if self.name == "PC":
                 return f"{colored(self.game_score, 'red')}"
