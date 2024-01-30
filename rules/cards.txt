@@ -1,5 +1,5 @@
-It is played with a Spanish deck excluding eights, nines and jokers. Total cards: 40
-Values from higher to lower:
+It is played with a Spanish deck excluding 8 (eights), 9 (nines) and jokers. Total cards: 40
+Cards hierarchy from higher to lower value is:
 1 sword
 1 club
 7 swords
@@ -15,4 +15,4 @@ Values from higher to lower:
 5 all
 4 all
 E.g: 7 coins is higher than any 2, but lower than 7 swords. 2 coins is equal to any other 2.  
-10, 11 and 12 are known as "the oldies"
+10, 11 and 12 are known as "the oldies".

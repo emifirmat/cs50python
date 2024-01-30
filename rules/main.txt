@@ -1,7 +1,7 @@
 --------------------GENERAL--------------------
 The main game is played by rows until one of the players reaches the goal score.
 Each row has 3 phases and the player requires to win at least 2 of them in order to win the row.
-The highest value card played during the phase is the winner of it.
+The highest value card played during the phase is the winner.
 Each player has one turn per phase.
 
 --------------------DEALING--------------------

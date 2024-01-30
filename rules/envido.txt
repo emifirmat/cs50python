@@ -1,7 +1,7 @@
 --------------------CALLING--------------------------
 Envido should be called at the very beggining of the turn and in the first phase. After that, players should wait until next row to call it again.
 The adversary can reject, accept or follow the next chain of calls: envido --> envido --> real envido --> falta envido.
-If the adversary followed the chain, then the original player has to answer.
+If the adversary followed the chain, then the original caller has to answer.
 Note: The call can start from any point of the chain. Steps can be skipped as long as they follow the chain. 
 E.g.: Player 1 calls "real envido", player 2 calls "falta envido" (they can't call envido or real envido), player 1 only can accept or reject. 
 
@@ -28,6 +28,3 @@ E.g.2: envido + envido rejected: 2 score points
 The player who answered is the first to announce their points.
 In order to win, the caller should announce higher points. If they have lower points and only for the purpose of not revealing their points, instead they can say "Son buenas".
 If there is a tie, the first announcer is the winner.
-Players can lie about their points, but at the end of the row, if the winner lied, points go to the loser.
-Announced points cannot be rectified.
- 

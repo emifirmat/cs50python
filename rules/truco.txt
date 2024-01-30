@@ -2,7 +2,7 @@
 Truco can be called at any phase of the game, before playing the card.
 Opposite to the envido, it should start from the beggining of the chain: truco --> retruco --> vale 4
 Adversary can accept, reject or follow the chain without skipping any steps. 
-The player who accepts, can follow the chain at any phase.
+The player who accepts, can follow the chain at any phase of the game.
 E.g: Player 1 calls truco at phase 1 and player 2 accepts. At phase 3 player 2 calls retruco and player 1 rejects it.
 If any step of the chain is rejected, the row ends.  
 
@@ -10,7 +10,7 @@ If any step of the chain is rejected, the row ends.
 The purpose of calling truco is to increase the score points of the main game. That is to say, there are no truco points.
 
 --------------------SCORE POINTS--------------------
-Opposite to the envido, they are not acumulative.
+Opposite to the envido, they are not accumulative.
 Rejection or not calling it in the whole row: 1 score point
 Truco: 2 score points
 Retruco: 3 score points
