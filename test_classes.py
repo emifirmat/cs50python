@@ -55,7 +55,7 @@ def test_Menu_errors(menu):
         menu.append("2")
 
 
-def test_Menu_inputs(menu):
+def test_Menu_in_menu(menu):
     for input in ["a", "quit"]:
         assert menu.in_menu(input) == True
     assert menu.in_menu("b") == False

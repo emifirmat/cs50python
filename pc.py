@@ -27,13 +27,20 @@ def call(opt_size, envido_points, game_phase, phase_winner, hand):
         return "play"
 
 
-def select_envido(opt_list, envido_points):
+def select_envido(opt_list, envido_points, envido_phase=0):
+    if envido_phase == 2:
+        return "falta envido"
+    # Give reply options according to envido_phase
     quartile = assign_quartile(envido_points)
-    weight = assign_envido_reply_weight(opt_list, quartile, 0)
-    answer = random.choices(
-        opt_list, [weight[opt_list[0]], weight[opt_list[1]], weight[opt_list[2]]]
-    )
-    return answer[0]
+    weight = assign_envido_reply_weight(opt_list, quartile, envido_phase)
+    if envido_phase == 1:
+        answer = random.choices(opt_list, [weight[opt_list[0]], weight[opt_list[1]]])
+        return answer[0]
+    elif envido_phase == 0:
+        answer = random.choices(
+            opt_list, [weight[opt_list[0]], weight[opt_list[1]], weight[opt_list[2]]]
+        )
+        return answer[0]
 
 
 def answer_envido(opt_list, envido_points, envido_score, envido_phase):
@@ -49,22 +56,6 @@ def answer_envido(opt_list, envido_points, envido_score, envido_phase):
     else:
         answer = random.choices(opt_list, [weight[opt_list[0]], weight[opt_list[1]]])
     return answer[0]
-
-
-def reply_envido(opt_list, envido_points, envido_phase):
-    if envido_phase == 2:
-        return "falta envido"
-    # Give reply options according to envido_phase
-    quartile = assign_quartile(envido_points)
-    weight = assign_envido_reply_weight(opt_list, quartile, envido_phase)
-    if envido_phase == 1:
-        answer = random.choices(opt_list, [weight[opt_list[0]], weight[opt_list[1]]])
-        return answer[0]
-    elif envido_phase == 0:
-        answer = random.choices(
-            opt_list, [weight[opt_list[0]], weight[opt_list[1]], weight[opt_list[2]]]
-        )
-        return answer[0]
 
 
 def answer_truco(phase, phase_winner, opt_list, hand, envido_points=0):
@@ -334,7 +325,7 @@ def assign_envido_reply_weight(opt_list, quartile, envido_phase):
             return add_envido_weight(opt_list, 0.35, 0.35, 0.30)
         else:
             return add_envido_weight(opt_list, 0.15, 0.25, 0.60)
-    # Seocond envido called
+    # Second envido called
     elif envido_phase == 1:
         if quartile == "q1":
             return add_envido_weight(opt_list, 0.70, 0.30)

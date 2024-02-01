@@ -6,19 +6,19 @@ from classes import *
 from tabulate import tabulate
 from termcolor import colored, cprint
 
-
+""" Falta envido, goal score and play card modified for testing purposes"""
 # Constant variables
 TOTAL_PHASES = TOTAL_CARDS = 3
 
 # Default game settings
-goal_scre = 30
+goal_scre = 30000
 f = Figlet(font="slant")
 
 
 def main():
     # Welcome
     game = "Truco card game"
-    name = introduction(game)
+    name = "PC"
 
     # Menu options: Start game, rules, settings, exit.
     while True:
@@ -51,7 +51,7 @@ def main():
                     str(goal_scre) + " POINTS", "light_green", attrs=["bold"]
                 )
                 print(f"<<< The first who reaches {f_text} wins >>>\n")
-                time.sleep(2)
+              
 
                 """ Start Row """
                 while True:
@@ -66,7 +66,7 @@ def main():
                         "blue",
                         attrs=["bold"],
                     )
-                    time.sleep(1)
+            
 
                     # Shuffling
                     deck = Deck(full_deck)
@@ -103,12 +103,12 @@ def main():
                         print(
                             f"{f_text[0]} to play is {p1} and {f_text[1]} to play is {p2}.\n"
                         )
-                        time.sleep(2)
+                
                         if p1.name == "PC":
                             print(f"{p2:s_hand}")
                         else:
                             print(f"{p1:s_hand}")
-                        time.sleep(2)
+                        time.sleep(1)
 
                         # Playing turns - First variable in turn() is current player's turn
                         p1card = turn(p1, p2, settings)
@@ -238,6 +238,8 @@ def set_deck(filerute):
             cards_list = [row for row in csv_file]
     except FileNotFoundError:
         exit("Can't open cards values file")
+    if len(cards_list) != 40:
+        raise ValueError("This file doesn't have 40 cards")
     return cards_list
 
 
@@ -328,10 +330,10 @@ def turn(px, py, settings, p1card=None):
                 return play_card(px, settings, p1card)
             case "hand":
                 print(f"{px:s_hand}")
-                time.sleep(2)
+                
             case "score":
                 show_score(px, py, settings)
-                time.sleep(2)
+                
             case "quit":
                 exit_game()
 
@@ -466,7 +468,7 @@ def envido(px, py, settings, call):
             winner, loser = play_envido(px, py)
             # Update score: falta envido vs others.
             if phase == 2:
-                settings.set_falta_envido(goal_scre, loser.game_score)
+                settings.set_falta_envido(100, 10)
                 # There are NOT accumulative score points.
                 settings.envido_score = chain[phase]["falta envido"]
             else:
@@ -504,7 +506,7 @@ def truco(px, py, settings):
     chain = settings.truco_chain
     for key in chain[phase]:
         print(f"{px} says -{colored(key.upper() + '!', 'blue', attrs=['bold'])}-\n")
-    time.sleep(1)
+  
 
     opt_list = [
         ["accept"],
@@ -560,7 +562,7 @@ def truco(px, py, settings):
                 settings.truco_score = value
             return True
         case "reject":
-            time.sleep(1)
+            
             for value in chain[phase].values():
                 settings.truco_score = value - 1
             print(f"<< {px} wins this row >>\n")
@@ -574,19 +576,10 @@ def truco(px, py, settings):
 
 def play_card(px, settings, p1card=None):
     print(f"{px} picks a card...")
-    time.sleep(1)
+   
     if px.name == "PC":
-        card = pc.choose_card(
-            settings.phase, px.first, settings.phase_winner, px.hand, p1card
-        )
-    else:
-        while True:
-            try:
-                number, c_type = input(f"{px:hand}\n>> ").lower().strip().split(" ")
-                card = px.pick_card(number, c_type)
-                break
-            except (ValueError, TypeError):
-                continue
+        card = pc.pick_random_card(px.hand)
+
     px.hand.remove(card)
     f_text = colored(
         str(card["number"]) + " " + str(card["type"]), "blue", attrs=["bold"]

@@ -157,7 +157,7 @@ def test_add_weight(list):
     }
 
 
-def test_assign_weight_firstRow(list):
+def test_assign_weight_firstPhase(list):
     assert assign_weight(1, ["PC"], list, ["t1", "t1", "t1"]) == {
         "accept": 0.03,
         "reject": 0.96,
@@ -200,7 +200,7 @@ def test_assign_weight_firstRow(list):
     }
 
 
-def test_assign_weight_secondRow(list):
+def test_assign_weight_secondPhase(list):
     assert assign_weight(2, ["PC"], list, ["t1", "t1"]) == {
         "accept": 0.30,
         "reject": 0.60,
@@ -262,7 +262,7 @@ def test_assign_weight_secondRow(list):
     }
 
 
-def test_assign_weight_thirdRow(list):
+def test_assign_weight_thirdPhase(list):
     assert assign_weight(3, ["PC"], list, ["t1"]) == {
         "accept": 0.05,
         "reject": 0.40,
@@ -418,5 +418,5 @@ def test_assign_envido_reply_weight(e_list):
     }
 
 
-def test_reply_envido_faltaEnvido():
-    assert reply_envido(["falta envido"], 25, 2) == "falta envido"
+def test_select_envido_faltaEnvido():
+    assert select_envido(["falta envido"], 25, 2) == "falta envido"

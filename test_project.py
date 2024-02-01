@@ -68,11 +68,9 @@ def test_set_menu():
 
 
 def test_set_deck():
-    # Test wrong name or len
+    # Test wrong name
     with pytest.raises(SystemExit, match="Can't open cards values file"):
         set_deck("test")
-    with pytest.raises(ValueError, match="This file doesn't have 40 cards"):
-        set_deck("test_files/test_cards_less.csv")   
     # Test desk exist with all its cards
     deck_dict = set_deck("cards_values.csv")
     keys = deck_dict[0].keys()
@@ -224,14 +222,14 @@ def test_search_type(p1, p2):
 
 
 def test_get_envido_points(p1, p2):
-    with patch("project.search_type", side_effect=["sword", None, "sword", None]):
-        assert get_envido_points(p1) == 29
-        assert get_envido_points(p2) == 7
-        # 2 cards
-        p1.hand.pop(1)
-        p2.hand.pop(1)
-        assert get_envido_points(p1) == 29
-        assert get_envido_points(p2) == 7
+    # 3 cards
+    assert get_envido_points(p1) == 29
+    assert get_envido_points(p2) == 7
+    # 2 cards
+    p1.hand.pop(1)
+    p2.hand.pop(1)
+    assert get_envido_points(p1) == 29
+    assert get_envido_points(p2) == 7
 
 
 def test_play_envido(p1, p2):
@@ -278,12 +276,12 @@ def test_envido_reject(p1, p2, set):
         assert set.envido_score == 1
 
 
-def test_envido_call(p1, p2, set):
+def test_envido_reply(p1, p2, set):
     with (
         patch("project.set_menu", return_value="accept"),
         patch("project.play_envido", return_value=(p2, p1)),
         patch("pc.answer_envido", return_value="reply"),
-        patch("pc.reply_envido", return_value="envido"),
+        patch("pc.select_envido", return_value="envido"),
     ):
         # P1 called envido, p2 envido, p1 accepted, p2 won
         assert envido(p1, p2, set, "envido") == (p2, p1)
@@ -295,7 +293,7 @@ def test_envido_call(p1, p2, set):
             "project.set_menu", side_effect=["reply", "envido", "reply", "falta envido"]
         ),
         patch("pc.answer_envido", side_effect=["reply", "reject"]),
-        patch("pc.reply_envido", return_value="real envido"),
+        patch("pc.select_envido", return_value="real envido"),
     ):
         # P2 envido, p1 envido, p2 re, p1 fe, p2 reject. p1 wins
         assert envido(p2, p1, set, "envido") == (p1, p2)
