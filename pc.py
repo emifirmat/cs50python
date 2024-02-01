@@ -7,7 +7,7 @@ def main():
     ...
 
 
-""" Main functions"""
+""" Primary functions"""
 
 
 def call(opt_size, envido_points, game_phase, phase_winner, hand):

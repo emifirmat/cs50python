@@ -68,9 +68,11 @@ def test_set_menu():
 
 
 def test_set_deck():
-    # Test wrong name
+    # Test wrong name or len
     with pytest.raises(SystemExit, match="Can't open cards values file"):
         set_deck("test")
+    with pytest.raises(ValueError, match="This file doesn't have 40 cards"):
+        set_deck("test_files/test_cards_less.csv")   
     # Test desk exist with all its cards
     deck_dict = set_deck("cards_values.csv")
     keys = deck_dict[0].keys()

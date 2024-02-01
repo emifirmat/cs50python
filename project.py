@@ -135,19 +135,6 @@ def main():
 """ Primary functions"""
 
 
-def set_menu(list, call=None):
-    menu = Menu(list)
-    if call == "envido":
-        print(f"{' | '.join(list)}\n")
-    else:
-        print(f"{tabulate(list, headers=['Command', 'Description'])}\n")
-    # Check user answer
-    while True:
-        choise = input("Command: ").strip().lower().replace("exit", "quit")
-        if menu.in_menu(choise):
-            return choise
-
-
 def introduction(game):
     # Welcome msg
     cprint(f.renderText(game), "light_blue")
@@ -167,6 +154,19 @@ def introduction(game):
     )
     time.sleep(2)
     return name
+
+
+def set_menu(list, call=None):
+    menu = Menu(list)
+    if call == "envido":
+        print(f"{' | '.join(list)}\n")
+    else:
+        print(f"{tabulate(list, headers=['Command', 'Description'])}\n")
+    # Check user answer
+    while True:
+        choise = input("Command: ").strip().lower().replace("exit", "quit")
+        if menu.in_menu(choise):
+            return choise
 
 
 def rules():
@@ -238,6 +238,8 @@ def set_deck(filerute):
             cards_list = [row for row in csv_file]
     except FileNotFoundError:
         exit("Can't open cards values file")
+    if len(cards_list) != 40:
+        raise ValueError("This file doesn't have 40 cards")
     return cards_list
 
 
@@ -258,12 +260,13 @@ def choose_dealer(p1, p2, settings):
 
 def get_envido_points(p):
     points = 0
+    # Sort cards from higher to lower value
+    env_cards = sorted(p.temp_hand, key=lambda x: x["envido"], reverse=True)
     # Set filter if there are 2 cards of the same type
     type_filter = search_type(p)
     if type_filter is not None:
-        # Get and sort cards of the filter type
-        env_cards = list(filter(lambda card: card["type"] == type_filter, p.temp_hand))
-        env_cards = sorted(env_cards, key=lambda x: x["envido"], reverse=True)
+        # Get cards of the filter type
+        env_cards = list(filter(lambda card: card["type"] == type_filter, env_cards))
         # If there are 3 cards of the same type, remove the one with less value
         if len(env_cards) == 3:
             env_cards.pop()
@@ -271,7 +274,6 @@ def get_envido_points(p):
         points = 20
     else:
         # Leave only the card with the highest points
-        env_cards = list(sorted(p.temp_hand, key=lambda x: x["envido"], reverse=True))
         while len(env_cards) != 1:
             env_cards.pop()
     # Add points
@@ -334,6 +336,71 @@ def turn(px, py, settings, p1card=None):
                 time.sleep(2)
             case "quit":
                 exit_game()
+
+
+def end_phase(p1card, p2card, p1, p2, settings):
+    msg = f"The winner of {colored('phase ' + str(settings), attrs=['bold'])} is"
+
+    # P1 wins
+    if p1card > p2card:
+        p1.add_phase_point()
+        settings.phase_winner.append(p1.name)
+    # P2 wins
+    elif p1card < p2card:
+        p2.add_phase_point()
+        settings.phase_winner.append(p2.name)
+        # Winner is first to play in next phase
+        p2.plays_first()
+        p1.plays_last()
+    # Tie
+    else:
+        settings.phase_winner.append("tie")
+        msg = f"There is a"
+    print(f"{msg} {settings:phasew}")
+    print(f"Current phase points: {p1} {p1.phase_point} {p2} {p2.phase_point}\n")
+    time.sleep(1)
+
+
+def end_row(p1, p2, settings):
+    # Truco was not called in whole row
+    if settings.truco_score == 0:
+        settings.truco_score = 1
+    # No ties in game
+    if settings.phase_winner[0] != "tie":
+        if p1.phase_point == 2:
+            score(p1, p2, settings)
+            return (p1, True)
+        elif p2.phase_point == 2:
+            score(p2, p1, settings)
+            return (p2, True)
+        # None won 2 phases
+        elif settings.phase == 2 and settings.phase_winner[1] != "tie":
+            return False
+        # There was a tie in third row, first phase winner wins
+        else:
+            if p1.name == settings.phase_winner[0]:
+                score(p1, p2, settings)
+                return (p1, True)
+            else:
+                score(p2, p1, settings)
+                return (p2, True)
+    # Tie in first row
+    else:
+        # p1 wins another phase
+        if p1.name in settings.phase_winner:
+            score(p1, p2, settings)
+            return (p1, True)
+        # p2 wins another phase
+        elif p2.name in settings.phase_winner:
+            score(p2, p1, settings)
+            return (p2, True)
+        # 2 Ties move to phase 3
+        elif settings.phase == 2:
+            return False
+        else:
+            # Triple tie, p1 wins
+            score(p1, p2, settings)
+            return (p1, True)
 
 
 """ Secondary functions"""
@@ -530,79 +597,36 @@ def play_card(px, settings, p1card=None):
     return int(card["truco"])
 
 
+def score(px, py, settings, phase=None):
+    # Sum row score to player score
+    if phase == "envido":
+        px.update_game_score(settings.envido_score)
+    else:
+        px.update_game_score(settings.truco_score)
+    # Print score points
+    settings.update_row_points(settings.envido_score, settings.truco_score)
+    show_score(px, py, settings)
+
+    # Compare with total score
+    if px.game_score >= goal_scre:
+        if px.name == "PC":
+            print(f"\n😭😭 I'm sorry, you lost against {px.name} 😭😭\n\n")
+        else:
+            f_text = colored(
+                f.renderText(f"Congratulations {px.name}!!"),
+                "light_green",
+            )
+            print(f"{f_text}!! You won the game 😁😁!!\n\n")
+        exit_game("winner")
+    else:
+        return
+
+
 def show_score(px, py, settings):
     for p in [px, py]:
         print(f"{p} TOTAL POINTS --> {p:gscore}")
     print(f"CURRENT ROW SCORE POINTS --> {settings.row_points}")
     print(f"GOAL --> {goal_scre} POINTS\n")
-
-
-def end_phase(p1card, p2card, p1, p2, settings):
-    msg = f"The winner of {colored('phase ' + str(settings), attrs=['bold'])} is"
-
-    # P1 wins
-    if p1card > p2card:
-        p1.add_phase_point()
-        settings.phase_winner.append(p1.name)
-    # P2 wins
-    elif p1card < p2card:
-        p2.add_phase_point()
-        settings.phase_winner.append(p2.name)
-        # Winner is first to play in next phase
-        p2.plays_first()
-        p1.plays_last()
-    # Tie
-    else:
-        settings.phase_winner.append("tie")
-        msg = f"There is a"
-    print(f"{msg} {settings:phasew}")
-    print(f"Current phase points: {p1} {p1.phase_point} {p2} {p2.phase_point}\n")
-    time.sleep(1)
-
-
-def end_row(p1, p2, settings):
-    # Truco was not called in whole row
-    if settings.truco_score == 0:
-        settings.truco_score = 1
-    # No ties in game
-    if settings.phase_winner[0] != "tie":
-        if p1.phase_point == 2:
-            score(p1, p2, settings)
-            return (p1, True)
-        elif p2.phase_point == 2:
-            score(p2, p1, settings)
-            return (p2, True)
-        # None won 2 phases
-        elif settings.phase == 2 and settings.phase_winner[1] != "tie":
-            return False
-        # There was a tie in third row, first phase winner wins
-        else:
-            if p1.name == settings.phase_winner[0]:
-                score(p1, p2, settings)
-                return (p1, True)
-            else:
-                score(p2, p1, settings)
-                return (p2, True)
-    # Tie in first row
-    else:
-        # p1 wins another phase
-        if p1.name in settings.phase_winner:
-            score(p1, p2, settings)
-            return (p1, True)
-        # p2 wins another phase
-        elif p2.name in settings.phase_winner:
-            score(p2, p1, settings)
-            return (p2, True)
-        # 2 Ties move to phase 3
-        elif settings.phase == 2:
-            return False
-        else:
-            # Triple tie, p1 wins
-            score(p1, p2, settings)
-            return (p1, True)
-
-
-""" Other functions"""
 
 
 def play_envido(caller, replier):
@@ -622,32 +646,6 @@ def play_envido(caller, replier):
         f_text = colored(str(caller.envido_points) + " points!", attrs=["bold"])
         print(f"{caller}: And I have {f_text} I win!\n")
         return caller, replier
-
-
-def score(px, py, settings, phase=None):
-    # Sum row score to player score
-    if phase == "envido":
-        px.update_game_score(settings.envido_score)
-    else:
-        px.update_game_score(settings.truco_score)
-    # Print score points
-    settings.update_row_points(settings.envido_score, settings.truco_score)
-    show_score(px, py, settings)
-
-    # Compare with total score
-    if px.game_score >= goal_scre:
-        if px.name == "PC":
-            print(f"\n😭😭 I'm sorry, you lost against {px.name} 😭😭\n\n")
-        else:
-            f_text = colored(
-                f.renderText(f"Congratulations {px.name}!!"),
-                "light_green",
-                attrs=["blink"],
-            )
-            print(f"{f_text}!! You won the game 😁😁!!\n\n")
-        exit_game("winner")
-    else:
-        return
 
 
 if __name__ == "__main__":
