@@ -137,7 +137,7 @@ def main():
 
 def introduction(game):
     # Welcome msg
-    cprint(f.renderText(game), "light_blue")
+    cprint(f.renderText(game), "blue")
     time.sleep(1)
 
     # Ask name and limit length up to 20 chars
